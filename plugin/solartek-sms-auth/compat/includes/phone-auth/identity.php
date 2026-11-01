@@ -28,7 +28,9 @@ function moto_phone_legacy_owner(string $phone) {
 
 /** Hints only: a matching billing contact never replaces old-account proof. */
 function moto_merge_candidates() {
-    $source = moto_merge_source();
+    // Recognizing a masked contact is read-only; preparing/committing a merge
+    // still uses the default recent-login requirement in moto_merge_source().
+    $source = moto_merge_source(false);
     if (is_wp_error($source)) return $source;
     global $wpdb;
     $phone = get_user_meta($source->ID, '_moto_verified_phone', true);

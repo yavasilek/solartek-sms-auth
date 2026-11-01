@@ -44,7 +44,13 @@ foreach(['tamper','expired','future','session','phone','target-password','target
  $fixtureSession='fixture-wordpress-session';
 }
 [$source,$target]=merge_fixture_pair();$fixtureMergeSessions[$source][wp_get_session_token()]['login']=time()-901;
-dcheck('Stale phone session gets no hints',dcode(moto_merge_candidates())==='merge_reauth'&&!str_contains(dhtml(),'bu***r@example.test'));
+dcheck('Older valid phone session can recognize masked email',count(moto_merge_candidates())===1&&str_contains(dhtml(),'bu***r@example.test'));
+dcheck('Older session never reveals full old email',!str_contains(dhtml(),'buyer@example.test'));
+dcheck('Older session still cannot prepare merge',dcode(moto_merge_prepare_candidate(dtoken($source,$target),'fixture-password'))==='merge_reauth');
+dcheck('Read-only hints do not extend login freshness',dcode(moto_merge_source())==='merge_reauth'&&!is_wp_error(moto_merge_source(false)));
+$fixtureMergeSessions[$source]=[];dcheck('Revoked session cannot discover candidates',is_wp_error(moto_merge_candidates()));
+$fixtureMergeSessions[$source]=[wp_get_session_token()=>['login'=>time()+120]];dcheck('Future session timestamp cannot discover candidates',is_wp_error(moto_merge_candidates()));
+$fixtureMergeSessions[$source]=[wp_get_session_token()=>['login'=>0]];dcheck('Missing login proof cannot discover candidates',is_wp_error(moto_merge_candidates()));
 [$source,$target]=merge_fixture_pair();$fixtureUser=0;dcheck('Guest gets no hints',is_wp_error(moto_merge_candidates())&&dhtml()==='');
 [$source,$target]=merge_fixture_pair();update_user_meta($target,'billing_phone','');update_user_meta($target,'shipping_phone','89991234567');
 dcheck('Shipping-only recipient is not suggested',moto_merge_candidates()===[]);

@@ -9,14 +9,14 @@ function moto_account_is_merged(int $id): bool {
     return $value !== null && $value !== '';
 }
 
-function moto_merge_source() {
+function moto_merge_source(bool $requireRecent = true) {
     $user = wp_get_current_user();
     if (!moto_phone_customer($user) || $user->user_email !== '' || !preg_match('/^moto_[a-f0-9]{32}$/D', $user->user_login)) return moto_phone_error('merge_forbidden', 'Объединение доступно из телефонного аккаунта покупателя.', 403);
     $phone = get_user_meta($user->ID, '_moto_verified_phone', true);
     if (!is_string($phone) || $phone === '' || moto_phone_normalize($phone) !== $phone) return moto_phone_error('merge_forbidden', 'Сначала войдите по подтверждённому телефону.', 403);
     $token = wp_get_session_token();
     $session = $token !== '' ? WP_Session_Tokens::get_instance($user->ID)->get($token) : null;
-    if (!is_array($session) || (int)($session['login'] ?? 0) < time() - 900 || (int)($session['login'] ?? 0) > time() + 60) return moto_phone_error('merge_reauth', 'Для безопасного объединения выйдите и заново войдите по телефону, затем вернитесь к этой форме.', 403);
+    if (!is_array($session) || (int)($session['login'] ?? 0) < 1 || (int)($session['login'] ?? 0) > time() + 60 || ($requireRecent && (int)$session['login'] < time() - 900)) return moto_phone_error('merge_reauth', 'Для безопасного объединения выйдите и заново войдите по телефону, затем вернитесь к этой форме.', 403);
     return $user;
 }
 
