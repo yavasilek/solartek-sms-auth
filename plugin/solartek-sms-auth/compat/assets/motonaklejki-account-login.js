@@ -25,12 +25,20 @@
         link.classList.add('moto-login-recovery'); options.append(remember, link);
         const actions = document.createElement('div'); actions.className = 'moto-auth-login-actions';
         actions.append(options, submit); form.append(actions);
-        // Checkout recovery belongs to the password field; keep the native link and form controls.
+        // Checkout uses in-field prompts while retaining the native accessible labels and controls.
         if (form.closest('.woocommerce-checkout')) {
-            const passwordLabel = form.querySelector('label[for="password"]');
-            if (passwordLabel) {
-                const heading = document.createElement('div'); heading.className = 'moto-auth-password-heading';
-                passwordLabel.before(heading); heading.append(passwordLabel, link);
+            inputs.forEach(input => {
+                const fieldLabel = input.labels?.[0];
+                if (!fieldLabel) return;
+                const promptLabel = fieldLabel.cloneNode(true);
+                promptLabel.querySelectorAll('.screen-reader-text, .sr-only, [hidden]').forEach(note => note.remove());
+                input.placeholder = promptLabel.textContent.replace(/\s+/g, ' ').trim();
+                input.closest('p').classList.add('moto-auth-infield');
+            });
+            const password = inputs.find(input => input.name === 'password');
+            const passwordRow = password?.closest('.moto-auth-infield');
+            if (passwordRow) {
+                passwordRow.append(link);
                 link.textContent = 'Забыли пароль?';
             }
         }
