@@ -36,5 +36,5 @@ register_activation_hook(__FILE__, static function () {
     if (PHP_VERSION_ID < 80100) wp_die('Solartek SMS Auth требует PHP 8.1 или новее.');
     add_option('ssa_setup_redirect', true, '', false);
 });
-register_deactivation_hook(__FILE__, static function () { wp_clear_scheduled_hook('moto_phone_cleanup'); });
+register_deactivation_hook(__FILE__, static function () { wp_clear_scheduled_hook('moto_phone_cleanup'); wp_clear_scheduled_hook('ssa_check_updates'); });
 

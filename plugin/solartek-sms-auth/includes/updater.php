@@ -78,3 +78,31 @@ add_filter('pre_set_site_transient_update_plugins','ssa_update_transient');
 add_filter('plugins_api','ssa_plugin_information',10,3);
 add_filter('upgrader_pre_download','ssa_pre_download',10,4);
 add_filter('auto_update_plugin',static function($update,$item){return ($item->plugin??'')===SSA_BASENAME?(bool)ssa_config('automatic_updates'):$update;},10,2);
+
+function ssa_schedule_updates(): void {
+    if (!ssa_config('configured') || !ssa_config('automatic_updates')) {
+        wp_clear_scheduled_hook('ssa_check_updates');
+        return;
+    }
+    if (!wp_next_scheduled('ssa_check_updates')) wp_schedule_event(time()+120,'twicedaily','ssa_check_updates');
+}
+function ssa_background_update(): void {
+    if (!ssa_config('configured') || !ssa_config('automatic_updates')) return;
+    require_once ABSPATH.'wp-admin/includes/admin.php';
+    require_once ABSPATH.'wp-admin/includes/class-wp-upgrader.php';
+    $auto=new WP_Automatic_Updater();
+    if ($auto->is_disabled() || !is_main_network() || !is_main_site() || !WP_Upgrader::create_lock('auto_updater')) return;
+    try {
+        if (is_wp_error(ssa_release_info(null,true))) return;
+        wp_update_plugins();
+        $updates=get_site_transient('update_plugins');
+        $offer=$updates->response[SSA_BASENAME]??null;
+        // Use WordPress eligibility, integrity hook and automatic fatal-error rollback.
+        // This task never installs updates for unrelated plugins, themes or WordPress.
+        if ($offer) $auto->update('plugin',$offer);
+    } finally {
+        WP_Upgrader::release_lock('auto_updater');
+    }
+}
+add_action('init','ssa_schedule_updates');
+add_action('ssa_check_updates','ssa_background_update');
