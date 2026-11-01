@@ -24,6 +24,7 @@ define('SSA_BASENAME', 'solartek-sms-auth/solartek-sms-auth.php');
 require_once SSA_DIR . 'includes/settings.php';
 require_once SSA_DIR . 'includes/updater.php';
 require_once SSA_DIR . 'includes/admin.php';
+require_once SSA_DIR . 'includes/admin-users.php';
 // Retain compatibility functions used by existing storefront integrations.
 require_once SSA_DIR . 'compat/motonaklejki-phone-auth.php';
 require_once SSA_DIR . 'compat/motonaklejki-account-merge.php';

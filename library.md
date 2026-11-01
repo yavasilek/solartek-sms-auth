@@ -1,0 +1,1 @@
+- IF installing, configuring or using the shared SMS authentication module or searching WordPress users by phone -> read [[README.md]].
