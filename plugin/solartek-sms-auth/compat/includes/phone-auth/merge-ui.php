@@ -22,7 +22,7 @@ function moto_merge_handle(): void {
             $result = ($_POST['merge_consent'] ?? '') === '1' ? moto_merge_commit($_POST['merge_ticket'] ?? null) : moto_phone_error('merge_consent', 'Подтвердите объединение аккаунтов.');
             if (!is_wp_error($result)) {
                 $committed = true;
-                wc_set_customer_auth_cookie($result['target']);
+                moto_merge_login($result['target']);
                 $target = get_user_by('id', $result['target']);
                 do_action('wp_login', $target->user_login, $target);
             }
@@ -48,6 +48,7 @@ function moto_merge_render(): void {
         <summary><span>Объединить с аккаунтом по почте</span></summary>
         <?php if ($active): $target = get_user_by('id', (int)$pending['plan']['target']); ?>
             <p>Подтверждён аккаунт <strong><?php echo esc_html($target ? $target->user_email : ''); ?></strong>. Сохраним его почту, пароль и историю. Из текущего телефонного аккаунта перенесём заказов: <?php echo esc_html((string)count($pending['plan']['orders'])); ?>. Вход по вашему телефону будет вести в общий кабинет.</p>
+            <p>Сохраним корзину: позиций <?php echo esc_html((string)count($pending['plan']['cart']['merged']??[])); ?>. Одинаковые позиции складываются. Готовых примерок из телефонного аккаунта: <?php echo esc_html((string)($pending['plan']['preview']['jobs']??0)); ?>.</p>
             <form method="post" action="<?php echo esc_url(wc_get_page_permalink('myaccount')); ?>">
                 <input type="hidden" name="action" value="moto_merge_commit">
                 <input type="hidden" name="merge_ticket" value="<?php echo esc_attr($pending['ticket']); ?>">

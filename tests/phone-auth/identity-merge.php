@@ -68,7 +68,8 @@ icheck('Different confirmed target phone rejected',ierr(moto_merge_prepare('buye
 icheck('Additional credentials require manual review',ierr(moto_merge_prepare('buyer@example.test','fixture-password'))==='merge_manual');
 [$source,$target]=merge_fixture_pair();moto_merge_prepare('buyer@example.test','fixture-password');$ticket=iticket();moto_merge_order_write_guard();
 icheck('Checkout holds identity lock through payment',moto_phone_lock('identity-user:'.$source)==='');
-icheck('Concurrent checkout blocks merge without moving orders',is_wp_error(moto_merge_commit($ticket))&&wc_get_order(101)->get_customer_id()===$source);moto_merge_order_unlock();
+moto_merge_order_unlock();$external=moto_phone_lock('identity-user:'.$source);
+icheck('Concurrent checkout blocks merge without moving orders',is_wp_error(moto_merge_commit($ticket))&&wc_get_order(101)->get_customer_id()===$source);moto_phone_unlock('identity-user:'.$source,$external);moto_merge_order_unlock();
 $lock=moto_phone_lock('identity-user:'.$source);$denied=false;try{wc_get_order(101)->save();}catch(WC_Data_Exception $e){$denied=true;}
 icheck('Merge lock blocks new customer order writes',$denied);moto_phone_unlock('identity-user:'.$source,$lock);
 update_user_meta($source,'_moto_merged_into',(string)$target);$denied=false;try{moto_merge_order_write_guard();}catch(WC_Data_Exception $e){$denied=true;}

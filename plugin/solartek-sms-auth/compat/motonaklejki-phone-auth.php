@@ -344,7 +344,7 @@ function moto_phone_verify(string $session, string $code) {
         if (!$phoneLock) return moto_phone_error('busy', 'Номер подтверждён. Повторите вход через несколько секунд.', 409);
         $userLockId = get_current_user_id();
         if ($userLockId) {
-            $userLock = moto_phone_lock('identity-user:' . $userLockId);
+            $userLock = function_exists('moto_merge_identity_lock') ? (moto_merge_identity_lock($userLockId) ? 'request' : '') : moto_phone_lock('identity-user:' . $userLockId);
             if (!$userLock) return moto_phone_error('busy', 'Аккаунт сейчас обновляется. Повторите через несколько секунд.', 409);
         }
         $user = moto_phone_resolve_user($phone);
@@ -359,7 +359,7 @@ function moto_phone_verify(string $session, string $code) {
         }
         return ['redirect' => wc_get_page_permalink('myaccount'), 'linked' => $linking];
     } finally {
-        if ($userLockId) moto_phone_unlock('identity-user:' . $userLockId, $userLock);
+        if ($userLockId && $userLock !== 'request') moto_phone_unlock('identity-user:' . $userLockId, $userLock);
         moto_phone_unlock('phone:' . $phone, $phoneLock);
         moto_phone_unlock($key, $lock);
     }

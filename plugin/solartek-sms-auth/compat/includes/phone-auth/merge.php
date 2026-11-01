@@ -49,10 +49,10 @@ function moto_merge_target($login, $password, int $source) {
 function moto_merge_storage_ready(): bool {
     global $wpdb;
     $tables = [$wpdb->users, $wpdb->usermeta, $wpdb->options, $wpdb->posts, $wpdb->postmeta];
-    foreach (['wc_orders','wc_order_addresses','wc_order_operational_data','wc_orders_meta','woocommerce_downloadable_product_permissions'] as $name) $tables[] = $wpdb->prefix . $name;
+    foreach (['wc_orders','wc_order_addresses','wc_order_operational_data','wc_orders_meta','woocommerce_downloadable_product_permissions','woocommerce_sessions'] as $name) $tables[] = $wpdb->prefix . $name;
     $placeholders = implode(',', array_fill(0, count($tables), '%s'));
     $rows = $wpdb->get_results($wpdb->prepare("SELECT TABLE_NAME, ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ($placeholders)", ...$tables));
-    if ($wpdb->last_error || count($rows) < 5) return false;
+    if ($wpdb->last_error || count($rows) < 5 || !in_array($wpdb->prefix.'woocommerce_sessions',array_column($rows,'TABLE_NAME'),true)) return false;
     foreach ($rows as $row) if (strtoupper($row->ENGINE) !== 'INNODB') return false;
     return true;
 }
@@ -76,8 +76,9 @@ function moto_merge_plan(WP_User $source, WP_User $target, ?string $root) {
     $owners = get_users(['meta_key' => '_moto_verified_phone', 'meta_value' => $phone, 'number' => 2, 'count_total' => false]);
     $otherPhone = get_user_meta($target->ID, '_moto_verified_phone', true);
     if (count($owners) !== 1 || (int)$owners[0]->ID !== $source->ID || ($otherPhone !== '' && $otherPhone !== $phone)) return moto_phone_error('merge_phone_conflict', 'У аккаунтов разные подтверждённые номера. Нужна проверка поддержки.', 409);
-    $persistentCart = get_user_meta($source->ID, '_woocommerce_persistent_cart_' . get_current_blog_id(), true);
-    if ((is_array($persistentCart) && !empty($persistentCart['cart'])) || (isset(WC()->cart) && !WC()->cart->is_empty()) || !empty(get_user_meta($source->ID, '_application_passwords', true)) || (class_exists('WC_Payment_Tokens') && WC_Payment_Tokens::get_customer_tokens($source->ID)) || moto_merge_private_busy($source->ID, $root)) return moto_phone_error('merge_manual', 'В телефонном аккаунте есть корзина, примерки или дополнительные способы доступа. Для сохранения всех данных обратитесь в поддержку — аккаунты не изменены.', 409);
+    if (!empty(get_user_meta($source->ID, '_application_passwords', true)) || (class_exists('WC_Payment_Tokens') && WC_Payment_Tokens::get_customer_tokens($source->ID))) return moto_phone_error('merge_manual', 'В телефонном аккаунте есть платёжные данные или дополнительные ключи доступа. Для их сохранения нужна поддержка; аккаунты не изменены.', 409);
+    $cart=moto_merge_cart_plan($source->ID,$target->ID);if(is_wp_error($cart))return $cart;
+    $preview=moto_merge_preview_plan($source->ID,$root);if(is_wp_error($preview))return $preview;
     foreach (['woocommerce_api_keys', 'wc_webhooks'] as $name) {
         $table = $wpdb->prefix . $name;
         if ((int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table WHERE user_id = %d", $source->ID)) > 0 || $wpdb->last_error) return moto_phone_error('merge_manual', 'Для объединения этого аккаунта нужна проверка поддержки.', 409);
@@ -92,8 +93,9 @@ function moto_merge_plan(WP_User $source, WP_User $target, ?string $root) {
         $value = get_user_meta($source->ID, $key, true); $old = get_user_meta($target->ID, $key, true);
         if (is_string($value) && $value !== '' && $old === '') { $fill[$key] = $value; $before[$key] = $old; }
     }
-    $plan = ['source' => $source->ID, 'target' => $target->ID, 'phone' => $phone, 'orders' => array_map('intval', $orders), 'downloads' => array_map(static fn($r) => (int)$r->permission_id, $downloads), 'fill' => $fill, 'before_fill' => $before];
-    $fingerprint = [$plan, $source->user_email, $target->user_email, $target->user_pass, $source->roles, $target->roles, $source->caps, $target->caps, $otherPhone];
+    $plan = ['source' => $source->ID, 'target' => $target->ID, 'phone' => $phone, 'orders' => array_map('intval', $orders), 'downloads' => array_map(static fn($r) => (int)$r->permission_id, $downloads), 'fill' => $fill, 'before_fill' => $before, 'cart'=>$cart, 'preview'=>$preview];
+    $intent=$plan;$intent['cart']=['source'=>moto_merge_cart_intent($cart['source']['cart']),'target'=>moto_merge_cart_intent($cart['target']['cart']),'coupons'=>$cart['coupons']];
+    $fingerprint = [$intent, $source->user_email, $target->user_email, $target->user_pass, $source->roles, $target->roles, $source->caps, $target->caps, $otherPhone];
     $plan['fingerprint'] = moto_phone_hash(wp_json_encode($fingerprint));
     return $plan;
 }
@@ -105,7 +107,7 @@ function moto_merge_user_fingerprint(WP_User $user): string {
 }
 
 function moto_merge_clear_caches(array $users, array $orders): void {
-    foreach ($users as $id) { clean_user_cache($id); if (function_exists('wp_cache_delete')) wp_cache_delete($id, 'user_meta'); }
+    foreach ($users as $id) { clean_user_cache($id); if (function_exists('wp_cache_delete')) wp_cache_delete($id, 'user_meta');moto_merge_cart_cache($id); }
     foreach ($orders as $id) {
         if (function_exists('clean_post_cache')) clean_post_cache($id);
         if (function_exists('wc_delete_shop_order_transients')) wc_delete_shop_order_transients($id);
@@ -144,12 +146,12 @@ function moto_merge_commit($ticket) {
     if (!moto_phone_customer($target) || !is_email($target->user_email)) return moto_phone_error('merge_expired', 'Аккаунт изменён. Начните проверку заново.', 409);
     $locks = []; $phoneKey = 'phone:' . $oldPlan['phone'];
     $keys = [$phoneKey]; $ids = [$source->ID, $target->ID]; sort($ids, SORT_NUMERIC);
-    foreach ($ids as $id) $keys[] = 'identity-user:' . $id;
     foreach ($keys as $key) {
         $token = moto_phone_lock($key);
         if ($token === '') { foreach ($locks as $k => $v) moto_phone_unlock($k, $v); return moto_phone_error('busy', 'Аккаунт сейчас обновляется. Повторите через несколько секунд.', 409); }
         $locks[$key] = $token;
     }
+    foreach($ids as $id)if(!moto_merge_identity_lock($id)){foreach($locks as $k=>$v)moto_phone_unlock($k,$v);return moto_phone_error('busy','Аккаунт сейчас обновляется. Повторите через несколько секунд.',409);}
     try {
         $callback = static function ($root = null) use ($source, $target, $oldPlan, $pendingKey, $ticket) {
             global $wpdb;
@@ -160,6 +162,8 @@ function moto_merge_commit($ticket) {
                 $wpdb->get_results($wpdb->prepare("SELECT ID FROM {$wpdb->users} WHERE ID IN (%d,%d) ORDER BY ID FOR UPDATE", $source->ID, $target->ID));
                 $wpdb->get_results($wpdb->prepare("SELECT user_id FROM {$wpdb->usermeta} WHERE user_id IN (%d,%d) ORDER BY user_id FOR UPDATE", $source->ID, $target->ID));
                 if ($wpdb->last_error) throw new RuntimeException('Account lock failed');
+                $wpdb->get_results($wpdb->prepare("SELECT session_key FROM {$wpdb->prefix}woocommerce_sessions WHERE session_key IN (%s,%s) ORDER BY session_key FOR UPDATE",(string)$source->ID,(string)$target->ID));
+                if ($wpdb->last_error) throw new RuntimeException('Account lock failed');
                 moto_merge_clear_caches([$source->ID,$target->ID], $oldPlan['orders']);
                 $freshPending = moto_phone_state($pendingKey);
                 if (!isset($freshPending['ticket']) || !hash_equals($freshPending['ticket'], $ticket) || ($freshPending['binding'] ?? '') !== moto_phone_binding()) throw new RuntimeException('Merge proof no longer active');
@@ -169,8 +173,9 @@ function moto_merge_commit($ticket) {
                 $plan = moto_merge_plan($freshSource, $freshTarget, $root);
                 if (is_wp_error($plan) || !hash_equals($oldPlan['fingerprint'], $plan['fingerprint'])) throw new RuntimeException('Merge plan changed');
                 $journal = ['source' => $source->ID, 'target' => $target->ID, 'orders' => $plan['orders'], 'downloads' => [], 'target_meta' => $plan['before_fill'], 'source_meta' => [], 'source_fingerprint' => moto_merge_user_fingerprint($freshSource), 'target_fingerprint' => moto_merge_user_fingerprint($freshTarget), 'created_at' => time(), 'expires' => time() + 90 * DAY_IN_SECONDS];
-                foreach (['_moto_verified_phone','_moto_phone_verified_at','billing_phone','_moto_last_merge_audit'] as $key) $journal['target_meta'][$key] = get_user_meta($target->ID, $key, true);
-                foreach (['_moto_verified_phone','_moto_phone_verified_at','billing_phone','shipping_phone','_moto_merged_into','_moto_merge_audit_key'] as $key) $journal['source_meta'][$key] = get_user_meta($source->ID, $key, true);
+                foreach (['_moto_verified_phone','_moto_phone_verified_at','billing_phone','_moto_last_merge_audit','_moto_cart_epoch','_woocommerce_persistent_cart_'.get_current_blog_id()] as $key) $journal['target_meta'][$key] = get_user_meta($target->ID, $key, true);
+                foreach (['_moto_verified_phone','_moto_phone_verified_at','billing_phone','shipping_phone','_moto_merged_into','_moto_merge_audit_key','_moto_cart_epoch','_woocommerce_persistent_cart_'.get_current_blog_id()] as $key) $journal['source_meta'][$key] = get_user_meta($source->ID, $key, true);
+                $journal['cart']=moto_merge_cart_apply($plan['cart'],$source->ID,$target->ID);$journal['preview']=$plan['preview'];
                 foreach ($plan['orders'] as $id) {
                     $order = wc_get_order($id);
                     if (!$order || (int)$order->get_customer_id() !== $source->ID) throw new RuntimeException('Order ownership changed');
@@ -229,11 +234,7 @@ function moto_merge_order_write_guard($order = null): void {
     if (moto_account_is_merged($user->ID)) throw new WC_Data_Exception('moto_account_merged', 'Аккаунты объединены. Войдите заново перед оформлением заказа.', 409);
     // A merge itself saves source orders with the target customer ID.
     if ($order && (int)$order->get_customer_id() !== $user->ID) return;
-    if (isset($GLOBALS['moto_merge_order_locks'][$user->ID])) return;
-    $key = 'identity-user:' . $user->ID; $token = moto_phone_lock($key);
-    if (!$token) throw new WC_Data_Exception('moto_identity_busy', 'Аккаунт сейчас объединяется. Повторите оформление через несколько секунд.', 409);
-    $GLOBALS['moto_merge_order_locks'][$user->ID] = $token;
-    register_shutdown_function('moto_merge_order_unlock');
+    if (!moto_merge_identity_lock($user->ID)) throw new WC_Data_Exception('moto_identity_busy', 'Аккаунт сейчас объединяется. Повторите оформление через несколько секунд.', 409);
     if (moto_account_is_merged($user->ID)) {
         moto_merge_order_unlock();
         throw new WC_Data_Exception('moto_account_merged', 'Аккаунты объединены. Войдите заново перед оформлением заказа.', 409);
@@ -269,24 +270,32 @@ function moto_merge_rollback(int $sourceId, bool $apply = false) {
         }
         foreach ($journal['orders'] as $id) if (moto_merge_order_owner($id) !== $targetId) return false;
         foreach ($journal['downloads'] as $id => $_) { $d = new WC_Customer_Download((int)$id); if ((int)$d->get_user_id() !== $targetId) return false; }
+        if(isset($journal['cart']))foreach([$sourceId=>'source',$targetId=>'target']as$id=>$kind){$now=moto_merge_cart_snapshot($id);$old=$journal['cart']['after_'.$kind];if(moto_merge_cart_intent($now['cart'])!=moto_merge_cart_intent($old['cart'])||$now['applied_coupons']!=$old['applied_coupons'])return false;}
+        if(!empty($journal['preview']['fingerprint'])){if(!function_exists('solartek_image_preview_root'))return false;$now=moto_merge_preview_plan($sourceId,solartek_image_preview_root());if(is_wp_error($now)||!hash_equals($journal['preview']['fingerprint'],$now['fingerprint']))return false;}
         return true;
     };
     if (!$check()) return moto_phone_error('merge_drift', 'После объединения данные изменились. Нужна ручная проверка.', 409);
     $result = ['source'=>$sourceId,'target'=>$targetId,'orders'=>count($journal['orders']),'downloads'=>count($journal['downloads']),'ready'=>true,'applied'=>false];
     if (!$apply) return $result;
     $locks = []; $ids = [$sourceId,$targetId];sort($ids,SORT_NUMERIC);
-    $keys = ['phone:' . $journal['after_target_meta']['_moto_verified_phone']];foreach($ids as $id)$keys[]='identity-user:'.$id;
+    $keys = ['phone:' . $journal['after_target_meta']['_moto_verified_phone']];
     foreach ($keys as $key) { $token=moto_phone_lock($key); if(!$token){foreach($locks as $k=>$v)moto_phone_unlock($k,$v);return moto_phone_error('busy','Аккаунт обновляется.',409);} $locks[$key]=$token; }
+    foreach($ids as$id)if(!moto_merge_identity_lock($id)){foreach($locks as$k=>$v)moto_phone_unlock($k,$v);return moto_phone_error('busy','Аккаунт обновляется.',409);}
     try {
+      $restore=static function()use($wpdb,$check,$journal,$sourceId,$targetId,$option,$result){
+       try {
         if($wpdb->query('START TRANSACTION')===false)throw new RuntimeException('Transaction failed');
         $wpdb->get_results($wpdb->prepare("SELECT ID FROM {$wpdb->users} WHERE ID IN (%d,%d) ORDER BY ID FOR UPDATE",$sourceId,$targetId));
         if($wpdb->last_error)throw new RuntimeException('Account lock failed');
         $wpdb->get_results($wpdb->prepare("SELECT user_id FROM {$wpdb->usermeta} WHERE user_id IN (%d,%d) ORDER BY user_id FOR UPDATE",$sourceId,$targetId));
         if($wpdb->last_error)throw new RuntimeException('Metadata lock failed');
+        $wpdb->get_results($wpdb->prepare("SELECT session_key FROM {$wpdb->prefix}woocommerce_sessions WHERE session_key IN (%s,%s) ORDER BY session_key FOR UPDATE",(string)$sourceId,(string)$targetId));
+        if($wpdb->last_error)throw new RuntimeException('Session lock failed');
         if(!$check())throw new RuntimeException('Drift');
         foreach($journal['orders'] as $id){$o=wc_get_order($id);$o->set_customer_id($sourceId);$o->save();}
         foreach($journal['downloads'] as $id=>$email){$d=new WC_Customer_Download((int)$id);$d->set_user_id($sourceId);$d->set_user_email($email);$d->save();}
         foreach([$sourceId=>'source',$targetId=>'target'] as $id=>$kind)foreach($journal[$kind.'_meta'] as $key=>$value)update_user_meta($id,$key,$value);
+        if(isset($journal['cart']))foreach([$sourceId=>'source',$targetId=>'target']as$id=>$kind){$old=$journal['cart']['before_'.$kind];moto_merge_cart_write($id,$old['cart'],$old['applied_coupons'],$old['removed_cart_contents'],(string)get_user_meta($id,'_moto_cart_epoch',true));}
         foreach($journal['orders'] as $id)if(moto_merge_order_owner($id)!==$sourceId)throw new RuntimeException('Restore failed');
         foreach([$sourceId=>'source',$targetId=>'target'] as $id=>$kind)foreach($journal[$kind.'_meta'] as $key=>$value)if(get_user_meta($id,$key,true)!==$value)throw new RuntimeException('Metadata restore failed');
         foreach($journal['downloads'] as $id=>$email){$d=new WC_Customer_Download((int)$id);if((int)$d->get_user_id()!==$sourceId||$d->get_user_email()!==$email)throw new RuntimeException('Download restore failed');}
@@ -295,5 +304,8 @@ function moto_merge_rollback(int $sourceId, bool $apply = false) {
         if($wpdb->replace($wpdb->options,['option_name'=>$option,'option_value'=>wp_json_encode($journal),'autoload'=>'no'])===false||$wpdb->query('COMMIT')===false)throw new RuntimeException('Commit failed');
         $result['applied']=true;return $result;
     } catch(Throwable $error) { $wpdb->query('ROLLBACK');return moto_phone_error('merge_rollback_failed','Восстановление не выполнено.',409); }
-    finally { moto_merge_clear_caches([$sourceId,$targetId],$journal['orders']);foreach(array_reverse($locks,true) as $key=>$token)moto_phone_unlock($key,$token); }
+       finally { moto_merge_clear_caches([$sourceId,$targetId],$journal['orders']); }
+      };
+      return function_exists('solartek_image_preview_lock')?solartek_image_preview_lock($restore):$restore();
+    } finally { foreach(array_reverse($locks,true) as$key=>$token)moto_phone_unlock($key,$token); }
 }

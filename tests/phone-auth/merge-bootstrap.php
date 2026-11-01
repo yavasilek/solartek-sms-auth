@@ -15,10 +15,11 @@ class MergeFixtureDB extends PhoneFixtureDB {
         $this->db->exec('CREATE TABLE IF NOT EXISTS fixture_woocommerce_downloadable_product_permissions (permission_id INTEGER PRIMARY KEY,user_id INTEGER,user_email TEXT,remaining INTEGER)');
         $this->db->exec('CREATE TABLE IF NOT EXISTS fixture_woocommerce_api_keys (user_id INTEGER)');
         $this->db->exec('CREATE TABLE IF NOT EXISTS fixture_wc_webhooks (user_id INTEGER)');
+        $this->db->exec('CREATE TABLE IF NOT EXISTS fixture_woocommerce_sessions (session_key TEXT PRIMARY KEY,session_value TEXT,session_expiry INTEGER)');
     }
     public function query(string $sql) {return parent::query($sql==='START TRANSACTION'?'BEGIN IMMEDIATE':$sql);}
     public function get_results(string $sql): array {
-        if(str_contains($sql,'information_schema.TABLES'))return array_map(fn($n)=>(object)['TABLE_NAME'=>$n,'ENGINE'=>'InnoDB'],['users','usermeta','options','posts','postmeta','fixture_wc_orders','fixture_woocommerce_downloadable_product_permissions']);
+        if(str_contains($sql,'information_schema.TABLES'))return array_map(fn($n)=>(object)['TABLE_NAME'=>$n,'ENGINE'=>'InnoDB'],['users','usermeta','options','posts','postmeta','fixture_wc_orders','fixture_woocommerce_downloadable_product_permissions','fixture_woocommerce_sessions']);
         return parent::get_results(str_replace(' FOR UPDATE','',$sql));
     }
     public function replace(string $table,array $data,array $formats=[]) {
@@ -71,7 +72,8 @@ function merge_fixture_user($login,$email='',$password='fixture-password',$role=
 }
 function merge_fixture_pair(){
     global $wpdb,$fixtureUser,$fixtureMergeSessions,$fixtureMergeFailOrder,$fixtureMergeMetaFail,$fixtureMergeAuthFailure,$fixtureCalls,$fixtureLoginCalls;
-    foreach(['options','users','usermeta','provider_ops','provider_calls','fixture_orders','fixture_woocommerce_downloadable_product_permissions','fixture_woocommerce_api_keys','fixture_wc_webhooks'] as $table)$wpdb->db->exec('DELETE FROM '.$table);
+    moto_merge_order_unlock();unset($GLOBALS['fixtureWC']);
+    foreach(['options','users','usermeta','provider_ops','provider_calls','fixture_orders','fixture_woocommerce_downloadable_product_permissions','fixture_woocommerce_api_keys','fixture_wc_webhooks','fixture_woocommerce_sessions'] as $table)$wpdb->db->exec('DELETE FROM '.$table);
     $fixtureMergeFailOrder=0;$fixtureMergeMetaFail='';$fixtureMergeAuthFailure=false;$fixtureCalls=[];$fixtureLoginCalls=[];
     $source=merge_fixture_user('moto_'.str_repeat('a',32));$target=merge_fixture_user('old-buyer','buyer@example.test');
     update_user_meta($source,'_moto_verified_phone','+79991234567');update_user_meta($source,'billing_phone','+79991234567');update_user_meta($target,'billing_phone','8 (999) 123-45-67');

@@ -106,8 +106,8 @@ function wp_insert_user($data) {
     try { $q=$wpdb->db->prepare('INSERT INTO users (user_login,roles,user_email,display_name) VALUES (?,?,?,?)'); $q->execute([$data['user_login'],json_encode([$data['role']]),$data['user_email']??'',$data['display_name']??$data['user_login']]); return (int)$wpdb->db->lastInsertId(); }
     catch (Throwable $e) { return new WP_Error('exists','fixture duplicate'); }
 }
-function update_user_meta($id,$key,$value) { global $wpdb; $wpdb->replace('usermeta',['user_id'=>$id,'meta_key'=>$key,'meta_value'=>$value]); return true; }
-function get_user_meta($id,$key,$single=true) { global $wpdb; $q=$wpdb->db->prepare('SELECT meta_value FROM usermeta WHERE user_id=? AND meta_key=?'); $q->execute([$id,$key]); return $q->fetchColumn() ?: ''; }
+function update_user_meta($id,$key,$value) { global $wpdb; $wpdb->replace('usermeta',['user_id'=>$id,'meta_key'=>$key,'meta_value'=>is_array($value)||is_object($value)?serialize($value):$value]); return true; }
+function get_user_meta($id,$key,$single=true) { global $wpdb; $q=$wpdb->db->prepare('SELECT meta_value FROM usermeta WHERE user_id=? AND meta_key=?'); $q->execute([$id,$key]);$v=$q->fetchColumn()?:'';return is_string($v)&&preg_match('/^[aO]:[0-9]+:/',$v)?unserialize($v,['allowed_classes'=>false]):$v; }
 function home_url($path='') { return (getenv('MOTO_PHONE_FIXTURE_ORIGIN') ?: 'https://мото.example.test').$path; }
 function site_url($path='') { return home_url($path); }
 function wp_parse_url($value) { return parse_url($value); }
