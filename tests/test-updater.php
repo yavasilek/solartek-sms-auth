@@ -2,8 +2,8 @@
 define('ABSPATH',__DIR__.'/');define('SSA_VERSION','1.0.0');define('SSA_BASENAME','solartek-sms-auth/solartek-sms-auth.php');define('HOUR_IN_SECONDS',3600);
 class WP_Error{function __construct(public $code='',public $message=''){}function get_error_code(){return $this->code;}}
 function is_wp_error($v){return $v instanceof WP_Error;}
-$repository='owner/module';$transients=[];$http=[];$calls=[];
-function ssa_config($key){return $key==='repository'?$GLOBALS['repository']:true;}
+$repository='owner/module';$transients=[];$http=[];$calls=[];$flags=[];
+function ssa_config($key){return $key==='repository'?$GLOBALS['repository']:($GLOBALS['flags'][$key]??true);}
 function get_site_transient($key){return $GLOBALS['transients'][$key]??false;}function set_site_transient($key,$value,$ttl){$GLOBALS['transients'][$key]=$value;}
 function wp_safe_remote_get($url,$args){$GLOBALS['calls'][]=[$url,$args];return $GLOBALS['http'][$url]??new WP_Error('missing');}
 function wp_remote_retrieve_response_code($reply){return $reply['status'];}function wp_remote_retrieve_body($reply){return $reply['body'];}
@@ -16,6 +16,9 @@ require __DIR__.'/../plugin/solartek-sms-auth/includes/updater.php';
 $checks=0;function check($name,$ok){global $checks;if(!$ok)throw new RuntimeException($name);$checks++;}
 ssa_schedule_updates();check('own periodic update check scheduled',isset($scheduled['ssa_check_updates'])&&$scheduled['ssa_check_updates'][1]==='twicedaily');
 $first=$scheduled;ssa_schedule_updates();check('periodic schedule not duplicated',$scheduled===$first);
+$flags['automatic_updates']=false;ssa_schedule_updates();check('opt out clears periodic task',!isset($scheduled['ssa_check_updates']));
+$flags['automatic_updates']=true;$flags['configured']=false;ssa_schedule_updates();check('unconfigured install has no periodic task',!isset($scheduled['ssa_check_updates']));
+$flags['configured']=true;ssa_schedule_updates();check('wizard completion restores periodic task',isset($scheduled['ssa_check_updates']));
 function fixture_release($version='1.0.1',$digest=null){return ['tag_name'=>'v'.$version,'draft'=>false,'prerelease'=>false,'assets'=>[['name'=>'solartek-sms-auth.zip','browser_download_url'=>'https://github.com/owner/module/releases/download/v'.$version.'/solartek-sms-auth.zip','size'=>123,'digest'=>$digest??('sha256:'.str_repeat('a',64))]]];}
 $url='https://api.github.com/repos/owner/module/releases/latest';$http[$url]=['status'=>200,'body'=>json_encode(fixture_release())];
 $release=ssa_release_info();check('stable release parsed',!is_wp_error($release)&&$release['version']==='1.0.1');
