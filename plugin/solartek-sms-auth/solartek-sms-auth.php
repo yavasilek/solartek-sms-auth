@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Solartek SMS Auth
  * Description: Вход по SMS для WooCommerce: мастер подключения, CAPTCHA и обновления из общего репозитория.
- * Version: 1.0.22
+ * Version: 1.0.23
  * Requires at least: 6.5
  * Requires PHP: 8.1
  * Requires Plugins: woocommerce
@@ -17,7 +17,7 @@ if (function_exists('moto_phone_key')) {
     add_action('admin_notices',static function(){if(current_user_can('manage_options'))echo '<div class="notice notice-warning"><p>Solartek SMS Auth: обнаружена прежняя MU-интеграция SMS. Завершите её миграцию по инструкции плагина; пока продолжает работать прежняя версия.</p></div>';});
     return;
 }
-define('SSA_VERSION', '1.0.22');
+define('SSA_VERSION', '1.0.23');
 define('SSA_FILE', __FILE__);
 define('SSA_DIR', __DIR__ . '/');
 define('SSA_BASENAME', 'solartek-sms-auth/solartek-sms-auth.php');
