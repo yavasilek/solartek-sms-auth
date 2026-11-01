@@ -1,17 +1,26 @@
 <?php
 defined('ABSPATH') || exit;
 
+function ssa_release_failure(string $cache,string $code,string $message) {
+    // Back off after a failed cold check instead of blocking every admin page again.
+    set_site_transient($cache.'_failure',['code'=>$code,'message'=>$message],300);
+    return new WP_Error($code,$message);
+}
 function ssa_release_info(?string $version=null,bool $force=false) {
     $repo=(string)ssa_config('repository');
     if(!preg_match('~^[a-zA-Z0-9][a-zA-Z0-9-]*/[a-zA-Z0-9][a-zA-Z0-9_.-]*$~D',$repo))return new WP_Error('ssa_repo','Некорректный репозиторий.');
     if($version!==null&&!preg_match('/^[0-9]+\.[0-9]+\.[0-9]+$/D',$version))return new WP_Error('ssa_version','Некорректная версия.');
     $cache='ssa_release_'.md5($repo.'|'.($version??'latest'));
-    if(!$force){$saved=get_site_transient($cache);if(is_array($saved))return $saved;}
+    if(!$force){
+        $saved=get_site_transient($cache);if(is_array($saved))return $saved;
+        $failed=get_site_transient($cache.'_failure');
+        if(is_array($failed)&&isset($failed['code'],$failed['message']))return new WP_Error($failed['code'],$failed['message']);
+    }
     $endpoint='https://api.github.com/repos/'.$repo.'/releases/'.($version===null?'latest':'tags/v'.$version);
     $reply=wp_safe_remote_get($endpoint,['timeout'=>12,'redirection'=>0,'sslverify'=>true,'limit_response_size'=>262144,'headers'=>['Accept'=>'application/vnd.github+json','User-Agent'=>'Solartek-SMS-Auth/'.SSA_VERSION]]);
-    if(is_wp_error($reply)||wp_remote_retrieve_response_code($reply)!==200)return new WP_Error('ssa_release','Релиз недоступен.');
+    if(is_wp_error($reply)||wp_remote_retrieve_response_code($reply)!==200)return ssa_release_failure($cache,'ssa_release','Релиз недоступен.');
     $json=json_decode(wp_remote_retrieve_body($reply),true);
-    if(!is_array($json)||!empty($json['draft'])||!empty($json['prerelease'])||!preg_match('/^v([0-9]+\.[0-9]+\.[0-9]+)$/D',$json['tag_name']??'',$match))return new WP_Error('ssa_release','Нет стабильного релиза.');
+    if(!is_array($json)||!empty($json['draft'])||!empty($json['prerelease'])||!preg_match('/^v([0-9]+\.[0-9]+\.[0-9]+)$/D',$json['tag_name']??'',$match))return ssa_release_failure($cache,'ssa_release','Нет стабильного релиза.');
     $releaseVersion=$match[1];if($version!==null&&$version!==$releaseVersion)return new WP_Error('ssa_release','Релиз не совпал с запрошенной версией.');
     $prefix='https://github.com/'.$repo.'/releases/download/v'.$releaseVersion.'/';$asset=null;
     foreach($json['assets']??[] as $item)if(($item['name']??'')==='solartek-sms-auth.zip')$asset=$item;
@@ -23,6 +32,7 @@ function ssa_release_info(?string $version=null,bool $force=false) {
         if(is_wp_error($checksum)||wp_remote_retrieve_response_code($checksum)!==200||!preg_match('/^([a-f0-9]{64})  solartek-sms-auth\.zip\r?$/m',wp_remote_retrieve_body($checksum),$hash))return new WP_Error('ssa_checksum','Не удалось получить контрольную сумму.');
         $sha=$hash[1];
     }
+    delete_site_transient($cache.'_failure');
     $data=['version'=>$releaseVersion,'package'=>$prefix.'solartek-sms-auth.zip','sha256'=>$sha,'size'=>(int)$asset['size'],'url'=>'https://github.com/'.$repo.'/releases/tag/v'.$releaseVersion,'requires'=>'6.5','requires_php'=>'8.1','tested'=>''];
     set_site_transient($cache,$data,6*HOUR_IN_SECONDS);return $data;
 }

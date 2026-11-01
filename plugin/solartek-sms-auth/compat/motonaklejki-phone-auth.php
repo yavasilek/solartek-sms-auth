@@ -463,6 +463,10 @@ function moto_phone_assets(): void {
         if ($extension === 'css') wp_enqueue_style('moto-phone-auth', $url, [], SSA_VERSION);
         else wp_enqueue_script('moto-phone-auth', $url, [], SSA_VERSION, true);
     }
+    // The native Solartek theme owns the surrounding account layout and palette.
+    if (function_exists('get_template') && get_template() === 'solartek') {
+        wp_enqueue_style('ssa-solartek-theme', ssa_asset_url('solartek-theme.css'), ['moto-phone-auth'], SSA_VERSION);
+    }
 }
 
 function moto_phone_cleanup(): void {

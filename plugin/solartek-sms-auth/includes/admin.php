@@ -13,6 +13,7 @@ function ssa_requirements(): array {
 }
 function ssa_admin_save(): void {
     ssa_require_admin();check_admin_referer('ssa_save');
+    $previousRepository=(string)ssa_config('repository');
     $step=max(1,min(4,(int)($_POST['step']??1)));$posted=wp_unslash($_POST);$changes=[];
     $fields=[1=>['service_url','api_path','request_timeout'],2=>array_merge(array_keys(ssa_numeric_ranges()),['privacy_url','account','checkout','profile','tryon','merge']),3=>['repository','automatic_updates'],4=>['enabled']];
     foreach($fields[$step] as $key){if(in_array($key,['account','checkout','profile','tryon','merge','automatic_updates','enabled'],true))$changes[$key]=$posted[$key]??'0';elseif(isset($posted[$key]))$changes[$key]=$posted[$key];}
@@ -31,7 +32,9 @@ function ssa_admin_save(): void {
     if(is_wp_error($settings)){ssa_notice($settings->get_error_message(),'error');wp_safe_redirect(ssa_admin_url($step));exit;}
     $settings['setup_step']=min(4,$step+1);
     if($step===4)$settings['configured']=true;
-    update_option('ssa_settings',$settings,false);delete_site_transient('update_plugins');
+    update_option('ssa_settings',$settings,false);
+    // Ordinary wizard edits must not force every installed plugin to contact its update server.
+    if($settings['repository']!==$previousRepository)delete_site_transient('update_plugins');
     ssa_notice($step===4?'Настройки сохранены. Модуль готов к работе.':'Шаг сохранён.');
     wp_safe_redirect(ssa_admin_url($step===4?4:$step+1));exit;
 }

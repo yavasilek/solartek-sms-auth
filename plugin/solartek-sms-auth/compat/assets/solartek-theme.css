@@ -1,0 +1,130 @@
+/* Loaded only for the native Solartek theme. Keep its palette and account cards. */
+.moto-phone-auth {
+    --ssa-surface: var(--st-panel, #171717);
+    --ssa-ink: var(--st-heading, #fffffe);
+    --ssa-muted: var(--st-text, #afb1bd);
+    --ssa-line: var(--st-border, rgba(255,255,255,.22));
+    --ssa-field: var(--st-bg, #080808);
+    --ssa-accent: var(--st-accent, #ff8906);
+    --ssa-link: #ff9b45;
+    --ssa-disabled: #30343b;
+    --ssa-disabled-ink: #c5cbd3;
+    background: var(--ssa-surface);
+    border: 1px solid var(--ssa-line);
+    border-radius: 8px;
+    color: var(--ssa-ink);
+}
+:root[data-solartek-theme="light"] .moto-phone-auth {
+    --ssa-link: #9a3f00;
+    --ssa-disabled: #e2e6ed;
+    --ssa-disabled-ink: #515b66;
+}
+.moto-phone-auth .moto-phone-auth__intro h2 {
+    display: block;
+    color: var(--ssa-ink);
+    padding-top: 0;
+}
+.moto-phone-auth .moto-phone-auth__hint { color: var(--ssa-muted); }
+.moto-phone-auth a,
+.moto-phone-auth [data-captcha-refresh],
+.moto-phone-auth .moto-phone-auth__actions button { color: var(--ssa-link); }
+.moto-phone-auth .moto-phone-auth__field input,
+.moto-password-auth .woocommerce-form-row input {
+    background: var(--ssa-field);
+    border-color: var(--ssa-line);
+    color: var(--ssa-ink);
+}
+.moto-phone-auth .moto-phone-auth__field input::placeholder { color: var(--ssa-muted); }
+.moto-phone-auth .moto-phone-auth__field input:disabled,
+.moto-phone-auth .moto-phone-auth__field input[readonly] {
+    background: var(--ssa-field);
+    color: var(--ssa-muted);
+}
+.moto-phone-auth .moto-phone-auth__submit,
+.moto-phone-auth .moto-auth-code-control .moto-auth-request-code,
+.moto-password-auth button.woocommerce-form-login__submit {
+    background: var(--ssa-accent);
+    color: #080808;
+}
+.moto-phone-auth .moto-phone-auth__submit:hover,
+.moto-phone-auth .moto-auth-code-control .moto-auth-request-code:hover,
+.moto-password-auth button.woocommerce-form-login__submit:hover {
+    background: #ff9b45;
+    color: #080808;
+}
+.moto-phone-auth button:disabled,
+.moto-phone-auth .moto-auth-code-control .moto-auth-request-code:disabled,
+.moto-phone-auth .moto-auth-code-control .moto-auth-request-code:disabled:hover {
+    background: var(--ssa-disabled);
+    color: var(--ssa-disabled-ink);
+    opacity: 1;
+}
+.moto-phone-auth .moto-phone-auth__verification-note { background: var(--ssa-field); color: var(--ssa-ink); }
+.moto-phone-auth input:focus-visible,
+.moto-phone-auth button:focus-visible,
+.moto-phone-auth a:focus-visible { outline-color: var(--ssa-accent); }
+.moto-phone-auth .moto-phone-auth__status[data-error="1"],
+.moto-phone-auth .moto-phone-auth__consent-error { color: #ffb4a8; }
+.moto-phone-auth .moto-phone-auth__consent.is-invalid { background: #421b19; }
+:root[data-solartek-theme="light"] .moto-phone-auth .moto-phone-auth__status[data-error="1"],
+:root[data-solartek-theme="light"] .moto-phone-auth .moto-phone-auth__consent-error { color: #971b12; }
+:root[data-solartek-theme="light"] .moto-phone-auth .moto-phone-auth__consent.is-invalid { background: #fff0ed; }
+
+/* The theme already supplies the password card; do not nest another panel or columns. */
+.sa-account-entry__form > .moto-password-auth.moto-phone-auth {
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+.sa-account-entry__form .moto-password-auth .moto-phone-auth__intro { max-width: none; margin-bottom: 20px; }
+body.woocommerce-account.solartek-account-active:not(.logged-in) .st-main--account .woocommerce .moto-phone-auth label {
+    color: var(--ssa-ink);
+}
+body.woocommerce-account.solartek-account-active:not(.logged-in) .st-main--account .woocommerce .moto-phone-auth .moto-phone-auth__intro h2 {
+    display: block;
+    margin: 0 0 8px;
+    color: var(--ssa-ink);
+    font-size: 24px;
+}
+body.woocommerce-account.solartek-account-active:not(.logged-in) .st-main--account .woocommerce .moto-password-auth form.woocommerce-form-login {
+    gap: 16px;
+    color: var(--ssa-ink);
+}
+body.woocommerce-account.solartek-account-active:not(.logged-in) .st-main--account .woocommerce .moto-password-auth input.input-text {
+    background: var(--ssa-field);
+    border-color: var(--ssa-line);
+    color: var(--ssa-ink);
+}
+body.woocommerce-account.solartek-account-active:not(.logged-in) .st-main--account .woocommerce .moto-password-auth button.show-password-input {
+    color: var(--ssa-muted);
+}
+body.woocommerce-account.solartek-account-active:not(.logged-in) .st-main--account .woocommerce .moto-password-auth button.show-password-input:hover {
+    background: var(--ssa-field);
+    color: var(--ssa-ink);
+}
+.woocommerce-form label.moto-privacy-consent { color: var(--st-heading, #fffffe); }
+.woocommerce-form .moto-privacy-consent a { color: var(--ssa-link, var(--st-accent, #ff8906)); }
+
+/* The guest entry cards have a fixed dark surface in the original theme. */
+html[data-solartek-theme="light"] body.woocommerce-account.solartek-account-active:not(.logged-in) .sa-account-entry__form,
+html[data-solartek-theme="light"] body.woocommerce-account.solartek-account-active:not(.logged-in) .sa-account-entry__guide {
+    background: var(--st-panel);
+    border-color: var(--st-border);
+    color: var(--st-text);
+}
+html[data-solartek-theme="light"] body.woocommerce-account.solartek-account-active:not(.logged-in) .sa-account-entry__guide h2 {
+    color: var(--st-heading);
+}
+html[data-solartek-theme="light"] body.woocommerce-account.solartek-account-active:not(.logged-in) .sa-account-entry__guide p:not(.sa-account-entry__eyebrow),
+html[data-solartek-theme="light"] body.woocommerce-account.solartek-account-active:not(.logged-in) .sa-account-entry__benefits li {
+    color: var(--st-text);
+}
+html[data-solartek-theme="light"] body.woocommerce-account.solartek-account-active:not(.logged-in) .sa-account-entry__eyebrow,
+html[data-solartek-theme="light"] body.woocommerce-account.solartek-account-active:not(.logged-in) .sa-account-entry__icon,
+html[data-solartek-theme="light"] body.woocommerce-account.solartek-account-active:not(.logged-in) .sa-account-entry__benefits li::before,
+html[data-solartek-theme="light"] body.woocommerce-account.solartek-account-active:not(.logged-in) .sa-account-entry__catalog.button {
+    color: #9a3f00;
+}

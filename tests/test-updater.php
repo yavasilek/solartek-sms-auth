@@ -5,6 +5,7 @@ function is_wp_error($v){return $v instanceof WP_Error;}
 $repository='owner/module';$transients=[];$http=[];$calls=[];$flags=[];
 function ssa_config($key){return $key==='repository'?$GLOBALS['repository']:($GLOBALS['flags'][$key]??true);}
 function get_site_transient($key){return $GLOBALS['transients'][$key]??false;}function set_site_transient($key,$value,$ttl){$GLOBALS['transients'][$key]=$value;}
+function delete_site_transient($key){unset($GLOBALS['transients'][$key]);}
 function wp_safe_remote_get($url,$args){$GLOBALS['calls'][]=[$url,$args];return $GLOBALS['http'][$url]??new WP_Error('missing');}
 function wp_remote_retrieve_response_code($reply){return $reply['status'];}function wp_remote_retrieve_body($reply){return $reply['body'];}
 function add_filter(...$args){}function add_action(...$args){}function esc_url($s){return $s;}
@@ -24,6 +25,16 @@ $url='https://api.github.com/repos/owner/module/releases/latest';$http[$url]=['s
 $release=ssa_release_info();check('stable release parsed',!is_wp_error($release)&&$release['version']==='1.0.1');
 check('digest read',strlen($release['sha256'])===64);check('TLS and no redirects',$calls[0][1]['sslverify']===true&&$calls[0][1]['redirection']===0);
 $count=count($calls);ssa_release_info();check('metadata cached',count($calls)===$count);
+$cache='ssa_release_'.md5($repository.'|latest');$good=$transients[$cache];unset($transients[$cache]);
+$http[$url]=new WP_Error('http_request_failed');
+check('cold request failure reported',is_wp_error(ssa_release_info()));$count=count($calls);
+check('failed checks back off without another HTTP request',is_wp_error(ssa_release_info())&&count($calls)===$count);
+$http[$url]=['status'=>200,'body'=>json_encode(fixture_release())];
+check('explicit refresh bypasses failure backoff',!is_wp_error(ssa_release_info(null,true))&&count($calls)===$count+1);
+check('successful refresh clears failure backoff',!isset($transients[$cache.'_failure']));
+$http[$url]=new WP_Error('http_request_failed');ssa_release_info(null,true);$count=count($calls);
+check('cached verified metadata survives a failed forced refresh',ssa_release_info()===$good&&count($calls)===$count);
+$http[$url]=['status'=>200,'body'=>json_encode(fixture_release())];
 $t=(object)['checked'=>[SSA_BASENAME=>'1.0.0'],'response'=>['unrelated'=>(object)['new_version'=>'9']]];$t=ssa_update_transient($t);
 check('WP update offered',isset($t->response[SSA_BASENAME])&&$t->response[SSA_BASENAME]->new_version==='1.0.1');check('other plugin untouched',isset($t->response['unrelated']));
 $t->checked[SSA_BASENAME]='1.0.1';$t=ssa_update_transient($t);check('updated disk metadata clears stale offer',!isset($t->response[SSA_BASENAME])&&isset($t->no_update[SSA_BASENAME]));
