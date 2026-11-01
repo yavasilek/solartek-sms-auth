@@ -1,0 +1,18 @@
+.moto-account-profile{margin:0 0 16px;padding:16px 20px;border-radius:12px;background:#fff;color:#111820}
+.moto-account-profile *{box-sizing:border-box}
+.moto-account-profile summary{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;min-height:44px;font-size:16px;font-weight:600;line-height:1.5;cursor:pointer;list-style:none}
+.moto-account-profile summary::-webkit-details-marker{display:none}
+.moto-account-profile summary>span{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.woocommerce-account .woocommerce-MyAccount-content{overflow-wrap:anywhere}
+.moto-account-profile__change{font-size:14px;font-weight:400;color:#9c3300;text-decoration:underline;text-underline-offset:3px}
+.moto-account-profile__form{display:flex;align-items:flex-end;gap:12px;margin:12px 0 0}
+.moto-account-profile__field{display:grid;gap:6px;flex:1;min-width:0;max-width:480px}
+.moto-account-profile__field label{font-size:14px;font-weight:600;line-height:1.5}
+.moto-account-profile__field input{display:block;width:100%;min-width:0;height:48px;padding:10px 12px;border:1px solid #a9b1ba;border-radius:8px;background:#fff;color:#111820;font:inherit;font-size:18px;line-height:1.4}
+.moto-account-profile__form button.button{flex:none;min-height:48px;margin:0;padding:12px 16px;border:0;border-radius:8px;background:#ff5a14;color:#111820;font:inherit;font-size:16px;font-weight:700;line-height:1.5;cursor:pointer}
+.moto-account-profile__form button.button:hover{background:#f04a00}
+.moto-account-profile :is(input,button,summary):focus-visible{outline:3px solid #111820;outline-offset:3px}
+.moto-account-phone-change__hint{margin:12px 0;font-size:14px;line-height:1.5}
+.moto-account-phone-change .moto-phone-auth{margin:0;padding:12px 0 0;border-radius:0}
+.moto-account-phone-change .moto-phone-auth__intro>p:first-of-type{display:none}
+@media(max-width:480px){.moto-account-profile{padding:12px 16px}.moto-account-profile__form{flex-direction:column;align-items:stretch}.moto-account-profile__field{max-width:none}.moto-account-profile__form button.button{width:100%}}

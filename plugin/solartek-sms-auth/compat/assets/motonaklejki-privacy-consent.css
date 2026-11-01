@@ -1,0 +1,7 @@
+.woocommerce-form .moto-privacy-consent-row, .woocommerce-checkout .moto-privacy-consent-row { grid-column: 1 / -1; clear: both; float: none; width: 100%; margin: 0 0 16px; padding: 0; }
+.moto-password-auth form.woocommerce-form-login p.form-row.moto-privacy-consent-row { display: block; }
+.woocommerce-form label.moto-privacy-consent, .woocommerce-checkout label.moto-privacy-consent { display: flex; align-items: flex-start; gap: 10px; margin: 0; font-size: 14px; font-weight: 400; line-height: 1.5; cursor: pointer; }
+.moto-privacy-consent input[type=checkbox] { appearance: auto; box-sizing: border-box; flex: 0 0 20px; width: 20px; height: 20px; margin: 1px 0 0; padding: 0; accent-color: #b83b00; }
+.moto-privacy-consent span { min-width: 0; }
+.moto-privacy-consent a { color: #9c3300; text-decoration: underline; text-underline-offset: 3px; }
+.moto-privacy-consent input:focus-visible { outline: 2px solid #111820; outline-offset: 3px; }

@@ -1,0 +1,14 @@
+/dist/
+/.local/
+/artifacts/
+/.taste-skill/
+*.sqlite
+*.sqlite-*
+*.log
+.env
+.env.*
+*.pem
+*.key
+wp-config.php
+__pycache__/
+

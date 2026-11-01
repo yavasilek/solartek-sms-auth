@@ -1,0 +1,57 @@
+name: Test and release
+on:
+  push:
+    branches: [main]
+    paths: ['plugin/**', 'scripts/**', 'tests/**', '.github/workflows/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sms-auth-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.1', '8.4']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea # v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: gd, intl, openssl, pdo_sqlite, zip
+          coverage: none
+      - run: python3 scripts/test.py
+      - run: python3 scripts/build.py
+  release:
+    if: github.event_name != 'pull_request'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Select version
+        id: version
+        run: python3 scripts/bump-version.py
+      - name: Commit version and create tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add plugin/solartek-sms-auth/solartek-sms-auth.php
+          git diff --cached --quiet || git commit -m "Release v${VERSION} [skip ci]"
+          git tag "v${VERSION}"
+          git push --atomic origin HEAD:main "refs/tags/v${VERSION}"
+      - run: python3 scripts/build.py
+      - name: Publish installable archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: gh release create "v${VERSION}" dist/solartek-sms-auth.zip dist/SHA256SUMS dist/release.json --verify-tag --title "Solartek SMS Auth ${VERSION}" --generate-notes
+

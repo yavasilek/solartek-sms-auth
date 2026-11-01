@@ -1,0 +1,101 @@
+/* Existing brand/type kept. One white work surface on the account page ground.
+   Two equal columns + 24px gap; at 720px they stack to the same outer edges. */
+.moto-phone-auth{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;margin:0 0 20px;padding:20px;background:#fff;border-radius:16px;color:#111820}
+.moto-phone-auth *{box-sizing:border-box}
+.moto-phone-auth [hidden]{display:none!important}
+.moto-phone-auth h2{margin:0 0 8px;font-size:24px;line-height:1.25;font-weight:600}
+.moto-phone-auth p{margin:0 0 10px;line-height:1.5}
+.moto-phone-auth__intro{max-width:480px}
+.moto-phone-auth .moto-phone-auth__hint{display:block;font-size:14px;color:#515b66;line-height:1.5}
+.moto-phone-auth__form{display:grid;gap:12px;min-width:0;align-content:start;margin:0}
+.moto-phone-auth__form::after{display:none!important}
+.moto-phone-auth__field{display:grid;gap:6px;min-width:0}
+.moto-phone-auth__field label{font-size:16px;font-weight:600;line-height:1.4}
+.moto-phone-auth__field input{width:100%;min-width:0;height:48px;padding:10px 12px;border:1px solid #a9b1ba;border-radius:8px;background:#fff;color:#111820;font:inherit;font-size:18px;line-height:1.4}
+.moto-phone-auth__field input::placeholder{color:#626d78;opacity:1}
+.moto-phone-auth__field input[readonly]{background:#f1f3f5;color:#424c57}
+.moto-phone-auth input[name=code]{font-variant-numeric:tabular-nums;letter-spacing:.12em}
+.moto-phone-auth [data-captcha-image]{display:block;width:100%;max-width:288px;height:auto;border:1px solid #a9b1ba;border-radius:8px}
+.moto-phone-auth [data-captcha-refresh]{justify-self:start;min-height:44px;padding:8px 0;border:0;background:transparent;color:#9c3300;font:inherit;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.moto-phone-auth input[name=captcha_answer]{text-transform:uppercase;letter-spacing:.12em}
+.moto-phone-auth__consent{display:flex;gap:10px;align-items:flex-start;font-size:14px;font-weight:400;line-height:1.5;cursor:pointer}
+.moto-phone-auth__consent input{appearance:auto;flex:none;width:20px;height:20px;margin:1px 0 0;accent-color:#b83b00}
+.moto-phone-auth .moto-phone-auth__consent.is-invalid{padding:12px;border-radius:6px;background:#fff0ed;outline:2px solid #b42318;outline-offset:2px}
+.moto-phone-auth .moto-phone-auth__consent.is-invalid input{outline:2px solid #b42318;outline-offset:2px}
+.moto-phone-auth .moto-phone-auth__consent-error{display:block;margin-top:8px;color:#971b12;font-size:16px;font-weight:700;line-height:1.4}
+.moto-phone-auth a{color:#9c3300;text-decoration:underline;text-underline-offset:3px}
+.moto-phone-auth .moto-phone-auth__submit{width:100%;min-height:48px;margin:0;padding:12px 16px;border:0;border-radius:8px;background:#ff5a14;color:#111820;font:inherit;font-size:16px;font-weight:700;line-height:1.5;cursor:pointer;box-shadow:none}
+.moto-phone-auth .moto-phone-auth__submit:hover{background:#f04a00;color:#111820}
+.moto-phone-auth button:disabled{opacity:.55;cursor:wait}
+.moto-phone-auth input:focus-visible,.moto-phone-auth button:focus-visible,.moto-phone-auth a:focus-visible{outline:3px solid #111820;outline-offset:3px}
+.moto-phone-auth__actions{display:flex;flex-wrap:wrap;gap:4px 16px}
+.moto-phone-auth__actions button{min-height:44px;padding:8px 0;border:0;background:transparent;color:#9c3300;font:inherit;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.moto-phone-auth .moto-phone-auth__status{min-height:24px;margin:0;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.moto-phone-auth__status:empty{display:none}
+.moto-phone-auth__status[data-error="1"]{color:#a12620}
+.moto-phone-auth .moto-phone-auth__verification-note{margin:0 0 6px;padding:12px;border-radius:6px;background:#f1f3f5;color:#111820;font-size:16px;line-height:1.5}
+@media(max-width:720px){.moto-phone-auth{grid-template-columns:minmax(0,1fr);gap:14px;padding:20px;margin-bottom:20px}.moto-phone-auth h2{font-size:22px}.moto-phone-auth__intro{max-width:none}.moto-phone-auth__intro p:last-child{margin-bottom:0}}
+@media(prefers-reduced-motion:reduce){.moto-phone-auth *{scroll-behavior:auto}}
+
+/* Native WooCommerce form: same surface, columns, fields and action as SMS. */
+.moto-password-auth>h2{display:none}
+.moto-password-auth form.woocommerce-form-login{display:grid;gap:12px;align-content:start;min-width:0;width:100%;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.moto-password-auth form.woocommerce-form-login::before,.moto-password-auth form.woocommerce-form-login::after{display:none}
+.moto-password-auth form.woocommerce-form-login p{float:none;clear:none;width:100%;margin:0;padding:0}
+.moto-password-auth .woocommerce-form-row{display:grid;gap:6px}
+.moto-password-auth .woocommerce-form-row>label{margin:0;font-size:16px;font-weight:600;line-height:1.4}
+.moto-password-auth .woocommerce-form-row input{display:block;width:100%;min-width:0;height:48px;margin:0;padding:10px 12px;border:1px solid #a9b1ba;border-radius:8px;background:#fff;color:#111820;font:inherit;font-size:18px;line-height:1.4;box-shadow:none}
+.moto-password-auth form.woocommerce-form-login p.form-row:not(.woocommerce-form-row){display:grid;grid-template-columns:minmax(140px,1fr) minmax(96px,1fr);align-items:center;gap:12px}
+.moto-password-auth .woocommerce-form-login__rememberme{display:flex;gap:10px;align-items:center;width:100%;margin:0;font-size:14px;font-weight:400;line-height:1.5;cursor:pointer}
+.moto-password-auth .woocommerce-form-login__rememberme input{appearance:auto;flex:none;width:20px;height:20px;margin:0;accent-color:#b83b00}
+.moto-password-auth button.woocommerce-form-login__submit{float:none;display:block;width:100%;min-height:48px;margin:0;padding:12px 16px;border:0;border-radius:8px;background:#ff5a14;color:#111820;font:inherit;font-size:16px;font-weight:700;line-height:1.5;cursor:pointer;box-shadow:none}
+.moto-password-auth button.woocommerce-form-login__submit:hover{background:#f04a00;color:#111820}
+.moto-password-auth .lost_password{font-size:14px;line-height:1.5}
+.moto-password-auth .lost_password a{display:inline-flex;align-items:center;min-height:44px}
+/* WooCommerce's toggle must work without its optional icon font/styles. */
+.woocommerce-account .woocommerce-form-login .password-input{position:relative;display:block;width:100%}
+.woocommerce-account .woocommerce-form-login .password-input input{padding-right:56px}
+.woocommerce-account .woocommerce-form-login button.show-password-input{position:absolute;inset:2px 4px auto auto;display:grid;place-items:center;width:44px;height:44px;min-width:44px;min-height:44px;margin:0;padding:0;border:0;border-radius:6px;background:transparent;color:#515b66;font:inherit;font-size:0;line-height:1;cursor:pointer;box-shadow:none}
+.woocommerce-account .woocommerce-form-login button.show-password-input:hover{background:#f1f3f5;color:#111820}
+.woocommerce-account .woocommerce-form-login button.show-password-input::after{display:none;content:none}
+.woocommerce-account .woocommerce-form-login button.show-password-input::before{display:block;content:"";width:22px;height:22px;background:currentColor;mask:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 4C6 4 2 10 1 12c1 2 5 8 11 8s10-6 11-8c-1-2-5-8-11-8Zm0 2c4.5 0 8 4.4 8.8 6-.8 1.6-4.3 6-8.8 6s-8-4.4-8.8-6C4 10.4 7.5 6 12 6Zm0 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z'/%3E%3C/svg%3E")}
+.woocommerce-account .woocommerce-form-login button.show-password-input.display-password::before{mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 4.2A12 12 0 0 1 12 4c6 0 10 6 11 8a20 20 0 0 1-3.2 4.2M6.2 6.2A23 23 0 0 0 1 12c1 2 5 8 11 8a13 13 0 0 0 5.8-1.8'/%3E%3C/svg%3E")}
+
+/* Shared guest login composition on My Account and Checkout. */
+.moto-auth-compact .moto-auth-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-width:0;align-items:start}
+.moto-auth-compact.moto-password-auth form.woocommerce-form-login{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.moto-auth-compact.moto-password-auth form.woocommerce-form-login>.clear{display:none}
+.moto-auth-compact .moto-auth-fields .woocommerce-form-row{grid-template-rows:auto 48px;gap:6px}
+.moto-auth-compact .moto-auth-fields .woocommerce-form-row label{min-width:0}
+.moto-auth-compact .moto-auth-login-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:12px;min-width:0}
+.moto-auth-compact .moto-auth-options{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:0;min-width:0}
+.moto-auth-compact .moto-auth-options .woocommerce-form-login__rememberme,.moto-auth-compact .moto-auth-options .moto-login-recovery{display:flex;align-items:center;min-height:32px;margin:0;font-size:14px;line-height:1.5;white-space:normal}
+.moto-auth-compact .moto-auth-login-actions>.woocommerce-form-login__submit,.moto-auth-compact .moto-auth-login-actions>.moto-auth-login{grid-column:2;width:100%;height:48px;min-height:48px;margin:0}
+.moto-auth-compact .moto-phone-auth__actions{align-items:center}
+.moto-auth-compact .moto-auth-code-control{position:relative;min-width:0;height:48px}
+.moto-auth-compact .moto-auth-code-control input{height:48px;padding-right:138px}
+.moto-auth-compact .moto-auth-code-control .moto-auth-request-code{position:absolute;inset:4px 4px 4px auto;width:124px;min-height:40px;height:40px;margin:0;padding:4px 8px;border:0;border-radius:5px;background:#f1f3f5;color:#9c3300;font:inherit;font-size:14px;font-weight:600;line-height:1.2;text-decoration:none;cursor:pointer;box-shadow:none}
+.moto-auth-compact .moto-auth-code-control .moto-auth-request-code:hover{background:#e9edf0;color:#9c3300}
+.moto-auth-compact .moto-auth-code-control input:disabled{background:#f8f9fa;color:#515b66;opacity:1}
+.moto-auth-compact [data-captcha-field],.moto-auth-compact .moto-phone-auth__status{grid-column:1/-1}
+@container ssa-form (min-width:520px){.moto-auth-compact .moto-auth-fields{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@container ssa-form (min-width:520px){
+    .moto-auth-compact [data-captcha-field]{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:12px;align-items:start}
+    .moto-auth-compact [data-captcha-field]>.moto-phone-auth__verification-note{grid-column:1/-1;grid-row:1}
+    .moto-auth-compact [data-captcha-field]>label{grid-column:1/-1;grid-row:2}
+    .moto-auth-compact [data-captcha-image]{grid-column:1;grid-row:3}
+    .moto-auth-compact [data-captcha-refresh]{grid-column:1;grid-row:4}
+    .moto-auth-compact [data-captcha-field]>.moto-auth-code-control{grid-column:2;grid-row:3;align-self:center}
+    .moto-auth-compact [data-captcha-field]>.moto-phone-auth__hint{grid-column:2;grid-row:4}
+}
+@media(max-width:480px){.moto-auth-compact .moto-auth-login-actions{grid-template-columns:minmax(0,1fr)}.moto-auth-compact .moto-auth-login-actions>.moto-auth-login,.moto-auth-compact .moto-auth-login-actions>.woocommerce-form-login__submit{grid-column:1}.moto-auth-compact .moto-auth-options{gap:4px}.moto-auth-compact .moto-auth-options .woocommerce-form-login__rememberme,.moto-auth-compact .moto-auth-options .moto-login-recovery{min-height:44px}}
+
+.moto-phone-auth .moto-phone-auth__submit,.moto-password-auth button.woocommerce-form-login__submit{background:#d14300;color:#fff}
+.moto-phone-auth .moto-phone-auth__submit:hover,.moto-password-auth button.woocommerce-form-login__submit:hover{background:#b83b00;color:#fff}
+.moto-phone-auth .moto-auth-code-control .moto-auth-request-code{background:#d14300;color:#fff}
+.moto-phone-auth .moto-auth-code-control .moto-auth-request-code:hover{background:#b83b00;color:#fff}
+.moto-phone-auth button:disabled{background:#e2e6ed;color:#515b66;opacity:1;cursor:not-allowed}
+
+/* Adapt to the available theme content width, not just the browser width. */
+.moto-phone-auth.moto-auth-compact{grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
+.moto-auth-compact .moto-phone-auth__form,.moto-auth-compact form.woocommerce-form-login{container-type:inline-size;container-name:ssa-form}

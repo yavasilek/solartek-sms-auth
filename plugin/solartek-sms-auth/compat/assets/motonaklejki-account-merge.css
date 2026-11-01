@@ -1,0 +1,17 @@
+.moto-account-merge{margin:0 0 16px;padding:16px 20px;border-radius:12px;background:#fff;color:#111820}
+.moto-account-merge summary{min-height:44px;display:flex;align-items:center;font-weight:600;cursor:pointer;list-style:none}
+.moto-account-merge summary::-webkit-details-marker{display:none}
+.moto-account-merge summary::after{content:"+";margin-left:auto;padding-left:12px;font-size:22px}
+.moto-account-merge[open] summary::after{content:"−"}
+.moto-account-merge p{margin:12px 0;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.moto-account-merge__credentials{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.moto-account-merge__credentials>div{flex:1;min-width:180px}
+.moto-account-merge__credentials label{display:block;margin-bottom:6px;font-size:14px}
+.moto-account-merge__credentials input{width:100%;min-height:48px}
+.moto-account-merge .moto-button{min-height:48px}
+.moto-account-merge__consent{display:flex;align-items:flex-start;gap:10px;margin:12px 0;font-size:14px;font-weight:400}
+.moto-account-merge__consent input{flex:none;margin-top:4px}
+.moto-account-merge__cancel{display:inline-block;margin-top:12px}
+.moto-account-merge__cancel button{min-height:44px;padding:8px 0;background:transparent;border:0;color:#9c3300;text-decoration:underline}
+.moto-account-merge__hint{color:#515b66}
+@media(max-width:600px){.moto-account-merge{padding:12px 16px}.moto-account-merge__credentials{flex-direction:column;align-items:stretch}.moto-account-merge__credentials>div{min-width:0}.moto-account-merge .moto-button{width:100%}}
