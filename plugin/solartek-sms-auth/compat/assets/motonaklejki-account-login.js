@@ -25,6 +25,15 @@
         link.classList.add('moto-login-recovery'); options.append(remember, link);
         const actions = document.createElement('div'); actions.className = 'moto-auth-login-actions';
         actions.append(options, submit); form.append(actions);
+        // Checkout recovery belongs to the password field; keep the native link and form controls.
+        if (form.closest('.woocommerce-checkout')) {
+            const passwordLabel = form.querySelector('label[for="password"]');
+            if (passwordLabel) {
+                const heading = document.createElement('div'); heading.className = 'moto-auth-password-heading';
+                passwordLabel.before(heading); heading.append(passwordLabel, link);
+                link.textContent = 'Забыли пароль?';
+            }
+        }
         row.querySelectorAll('input[type=hidden]').forEach(input => form.append(input));
         if (!row.textContent.trim() && !row.children.length) row.remove();
         if (!recovery.textContent.trim() && !recovery.children.length) recovery.remove();
