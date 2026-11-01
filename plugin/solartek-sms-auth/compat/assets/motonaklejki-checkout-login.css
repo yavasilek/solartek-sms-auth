@@ -12,8 +12,9 @@
 .woocommerce-checkout .moto-password-auth .moto-auth-fields .moto-auth-infield { position: relative; display: flex; flex-direction: column; gap: 6px; }
 .woocommerce-checkout .moto-password-auth .moto-auth-infield > label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .woocommerce-checkout .moto-password-auth .moto-auth-infield input::placeholder { color: var(--ssa-muted, #515b66); font-weight: 400; opacity: 1; }
-.woocommerce-checkout .moto-password-auth .moto-auth-infield > .moto-login-recovery { display: inline-flex; align-items: center; align-self: flex-end; min-height: 32px; margin-block: -6px; font-size: 13px; font-weight: 400; line-height: 1.5; text-underline-offset: 3px; white-space: nowrap; }
-.woocommerce-checkout .moto-password-auth .moto-auth-infield > .moto-login-recovery:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
-.woocommerce-checkout .moto-password-auth .moto-auth-login-actions { grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 12px; }
+.woocommerce-checkout .moto-password-auth .moto-auth-options { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 12px; }
+.woocommerce-checkout .moto-password-auth .moto-auth-options > .moto-login-recovery { display: inline-flex; align-items: center; min-height: 44px; margin: 0; margin-inline-start: auto; font-size: 14px; font-weight: 400; line-height: 1.5; text-underline-offset: 3px; white-space: nowrap; }
+.woocommerce-checkout .moto-password-auth .moto-auth-options > .moto-login-recovery:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.woocommerce-checkout .moto-password-auth .moto-auth-login-actions { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .woocommerce-checkout .moto-password-auth .moto-auth-options .woocommerce-form-login__rememberme { width: auto; min-height: 44px; gap: 6px; }
 .woocommerce-checkout .moto-password-auth .moto-auth-login-actions > .woocommerce-form-login__submit { grid-column: auto; }

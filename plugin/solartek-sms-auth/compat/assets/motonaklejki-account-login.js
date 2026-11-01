@@ -35,12 +35,7 @@
                 input.placeholder = promptLabel.textContent.replace(/\s+/g, ' ').trim();
                 input.closest('p').classList.add('moto-auth-infield');
             });
-            const password = inputs.find(input => input.name === 'password');
-            const passwordRow = password?.closest('.moto-auth-infield');
-            if (passwordRow) {
-                passwordRow.append(link);
-                link.textContent = 'Забыли пароль?';
-            }
+            link.textContent = 'Забыли пароль?';
         }
         row.querySelectorAll('input[type=hidden]').forEach(input => form.append(input));
         if (!row.textContent.trim() && !row.children.length) row.remove();
