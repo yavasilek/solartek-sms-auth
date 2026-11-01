@@ -13,7 +13,7 @@ function moto_privacy_consent_field(string $name, string $id): void {
     <p class="form-row form-row-wide moto-privacy-consent-row">
         <label class="moto-privacy-consent" for="<?php echo esc_attr($id); ?>">
             <input type="checkbox" id="<?php echo esc_attr($id); ?>" name="<?php echo esc_attr($name); ?>" value="1" required>
-            <span>Согласен на обработку персональных данных по <a href="<?php echo esc_url($privacy); ?>" target="_blank" rel="noopener">политике конфиденциальности</a>.</span>
+            <span><?php echo ssa_consent_statement($name === 'moto_checkout_personal_consent' ? 'checkout' : 'account'); ?></span>
         </label>
     </p>
     <?php
@@ -33,11 +33,16 @@ function moto_privacy_login_validate($errors) {
 add_filter('woocommerce_process_login_errors', 'moto_privacy_login_validate', 25);
 
 function moto_privacy_checkout_field(): void {
+    if (!apply_filters('ssa_checkout_consent_required', true)) {
+        echo '<p class="form-row form-row-wide">Данные используются для оформления и исполнения заказа. <a href="' . esc_url(ssa_privacy_url()) . '" target="_blank" rel="noopener">Политика обработки персональных данных</a>.</p>';
+        return;
+    }
     moto_privacy_consent_field('moto_checkout_personal_consent', 'moto-checkout-consent');
 }
 add_action('woocommerce_review_order_before_submit', 'moto_privacy_checkout_field', 15);
 
 function moto_privacy_checkout_validate($data, $errors): void {
+    if (!apply_filters('ssa_checkout_consent_required', true)) return;
     if (($_POST['moto_checkout_personal_consent'] ?? '') !== '1') {
         $errors->add('moto_checkout_personal_consent', 'Подтвердите согласие на обработку персональных данных перед оформлением заказа.');
     }

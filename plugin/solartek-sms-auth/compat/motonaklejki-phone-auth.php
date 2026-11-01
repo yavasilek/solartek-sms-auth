@@ -444,7 +444,7 @@ function moto_phone_render($context = '', $product_id = 0): void {
                 <label for="<?php echo esc_attr($id); ?>code">Код из SMS</label>
                 <input id="<?php echo esc_attr($id); ?>code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{4}([0-9]{2})?" aria-describedby="<?php echo esc_attr($id); ?>status">
             </div>
-            <label class="moto-phone-auth__consent"><input name="consent" type="checkbox" required><span>Согласен на обработку персональных данных по <a href="<?php echo esc_url($privacy); ?>" target="_blank" rel="noopener">политике конфиденциальности</a>.</span></label>
+            <label class="moto-phone-auth__consent"><input name="consent" type="checkbox" required><span><?php echo ssa_consent_statement($context); ?></span></label>
             <button type="submit" class="button moto-phone-auth__submit" disabled>Пройти проверку</button>
             <div class="moto-phone-auth__actions" hidden><button type="button" data-resend>Отправить код ещё раз</button><button type="button" data-change>Изменить номер</button></div>
             <p id="<?php echo esc_attr($id); ?>status" class="moto-phone-auth__status" role="status" aria-live="polite" aria-atomic="true">Подготавливаем безопасный вход…</p>
