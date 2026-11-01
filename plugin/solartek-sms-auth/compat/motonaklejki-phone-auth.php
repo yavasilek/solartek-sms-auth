@@ -437,9 +437,8 @@ function moto_phone_render($context = '', $product_id = 0): void {
         </div>
         <form class="moto-phone-auth__form" method="post" novalidate>
             <div class="moto-phone-auth__field">
-                <label for="<?php echo esc_attr($id); ?>phone">Номер телефона</label>
-                <input id="<?php echo esc_attr($id); ?>phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 999 123-45-67" maxlength="32" required aria-describedby="<?php echo esc_attr($id); ?>phone-hint">
-                <span id="<?php echo esc_attr($id); ?>phone-hint" class="moto-phone-auth__hint">Мобильный номер России</span>
+                <label for="<?php echo esc_attr($id); ?>phone">Мобильный номер России</label>
+                <input id="<?php echo esc_attr($id); ?>phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 999 123-45-67" maxlength="32" required>
             </div>
             <div class="moto-phone-auth__field" data-captcha-field hidden>
                 <label for="<?php echo esc_attr($id); ?>captcha">Символы с картинки</label>
