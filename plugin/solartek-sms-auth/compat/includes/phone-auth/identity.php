@@ -25,3 +25,48 @@ function moto_phone_legacy_owner(string $phone) {
     }
     return $user;
 }
+
+/** Hints only: a matching billing contact never replaces old-account proof. */
+function moto_merge_candidates() {
+    $source = moto_merge_source();
+    if (is_wp_error($source)) return $source;
+    global $wpdb;
+    $phone = get_user_meta($source->ID, '_moto_verified_phone', true);
+    $rows = $wpdb->get_results("SELECT user_id, meta_value FROM {$wpdb->usermeta} WHERE meta_key = 'billing_phone' AND meta_value <> '' ORDER BY user_id LIMIT 10001");
+    if ($wpdb->last_error || count($rows) > 10000) return moto_phone_error('merge_lookup', 'Не удалось найти старый аккаунт. Повторите позже или укажите почту самостоятельно.', 503);
+    $candidates = [];
+    foreach ($rows as $row) {
+        $id = (int)$row->user_id;
+        if ($id === $source->ID || isset($candidates[$id]) || moto_phone_normalize($row->meta_value) !== $phone) continue;
+        $user = get_user_by('id', $id);
+        if (!moto_phone_customer($user) || !is_email($user->user_email) || get_user_meta($id, '_moto_verified_phone', true) !== '' || moto_phone_normalize(get_user_meta($id, 'billing_phone', true)) !== $phone) continue;
+        $candidates[$id] = $user;
+        if (count($candidates) > 5) return moto_phone_error('merge_lookup', 'По номеру найдено несколько записей. Выбрать нужный аккаунт поможет поддержка.', 409);
+    }
+    return array_values($candidates);
+}
+
+function moto_merge_mask_email(string $email): string {
+    if (!is_email($email)) return '';
+    [$local, $domain] = explode('@', $email, 2);
+    $hint = strlen($local) > 4 ? substr($local, 0, 2) . '***' . substr($local, -1) : substr($local, 0, 1) . '***';
+    return $hint . '@' . $domain;
+}
+
+function moto_merge_candidate_token(WP_User $source, WP_User $target, int $expires): string {
+    $proof = [$source->ID, moto_phone_binding(), get_user_meta($source->ID, '_moto_verified_phone', true), moto_merge_user_fingerprint($target), $expires];
+    return $expires . '.' . moto_phone_hash('merge-candidate:' . wp_json_encode($proof));
+}
+
+function moto_merge_prepare_candidate($token, $password) {
+    $source = moto_merge_source();
+    if (is_wp_error($source)) return $source;
+    $error = static fn() => moto_phone_error('merge_candidate', 'Подсказка аккаунта устарела. Обновите страницу и выберите аккаунт заново.', 409);
+    if (!is_string($token) || !preg_match('/^([0-9]{10})\.[a-f0-9]{64}$/D', $token, $match) || (int)$match[1] <= time() || (int)$match[1] > time() + 300) return $error();
+    $candidates = moto_merge_candidates();
+    if (is_wp_error($candidates)) return $candidates;
+    foreach ($candidates as $target) {
+        if (hash_equals(moto_merge_candidate_token($source, $target, (int)$match[1]), $token)) return moto_merge_prepare($target->user_email, $password);
+    }
+    return $error();
+}

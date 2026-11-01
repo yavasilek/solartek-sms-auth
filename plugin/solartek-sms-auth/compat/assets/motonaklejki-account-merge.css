@@ -1,13 +1,15 @@
 .moto-account-merge{margin:0 0 16px;padding:16px 20px;border-radius:12px;background:#fff;color:#111820}
-.moto-account-merge summary{min-height:44px;display:flex;align-items:center;font-weight:600;cursor:pointer;list-style:none}
-.moto-account-merge summary::-webkit-details-marker{display:none}
-.moto-account-merge summary::after{content:"+";margin-left:auto;padding-left:12px;font-size:22px}
-.moto-account-merge[open] summary::after{content:"−"}
+.moto-account-merge>summary{min-height:44px;display:flex;align-items:center;font-weight:600;cursor:pointer;list-style:none}
+.moto-account-merge>summary::-webkit-details-marker{display:none}
+.moto-account-merge>summary::after{content:"+";margin-left:auto;padding-left:12px;font-size:22px}
+.moto-account-merge[open]>summary::after{content:"−"}
 .moto-account-merge p{margin:12px 0;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
 .moto-account-merge__credentials{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
 .moto-account-merge__credentials>div{flex:1;min-width:180px}
 .moto-account-merge__credentials label{display:block;margin-bottom:6px;font-size:14px}
-.moto-account-merge__credentials input{width:100%;min-height:48px}
+.moto-account-merge__credentials :is(input,select){width:100%;min-height:48px}
+.moto-account-merge__other{margin-top:8px}
+.moto-account-merge__other>summary{min-height:44px;font-size:14px;line-height:1.5;padding:10px 0;cursor:pointer}
 .moto-account-merge .moto-button{min-height:48px}
 .moto-account-merge__consent{display:flex;align-items:flex-start;gap:10px;margin:12px 0;font-size:14px;font-weight:400}
 .moto-account-merge__consent input{flex:none;margin-top:4px}
