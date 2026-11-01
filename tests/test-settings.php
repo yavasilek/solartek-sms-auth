@@ -8,6 +8,8 @@ function update_option($key,$value,$autoload=false){$GLOBALS['options'][$key]=$v
 function wp_salt($key){return $GLOBALS['salt'].$key;}
 function wp_parse_url($url,$component=-1){return parse_url($url,$component);}
 function esc_url_raw($url,$protocols=[]){return preg_match('~^https?://~',$url)?$url:'';}
+function esc_url($url){return htmlspecialchars(esc_url_raw($url),ENT_QUOTES,'UTF-8');}
+function apply_filters($name,$value,...$args){return $name==='ssa_consent_document_url'?($GLOBALS['consent_url']??''):$value;}
 function get_privacy_policy_url(){return 'https://shop.example.test/privacy/';}function home_url($path){return 'https://shop.example.test'.$path;}
 function plugins_url($path,$file){return 'https://shop.example.test/wp-content/plugins/solartek-sms-auth/'.$path;}
 define('SSA_FILE',__FILE__);
@@ -32,5 +34,11 @@ $options['ssa_secret']['tag']=base64_encode(str_repeat('x',16));check('tamper fa
 $salt='rotated-salt';check('different site salts cannot decrypt',ssa_secret_get()==='');$salt='fixture-salt';
 check('short key refused',is_wp_error(ssa_store_secret('short')));check('whitespace key refused',is_wp_error(ssa_store_secret(str_repeat('x',20)."\n")));
 check('privacy defaults to site policy',ssa_privacy_url()==='https://shop.example.test/privacy/');
+check('standalone consent is opt in',str_contains(ssa_consent_statement(),'политике конфиденциальности'));
+$GLOBALS['consent_url']='https://shop.example.test/consent/account/';
+check('standalone consent has own URL',str_contains(ssa_consent_statement(),'/consent/account/'));
+check('standalone consent retains policy',str_contains(ssa_consent_statement(),'https://shop.example.test/privacy/'));
+$GLOBALS['consent_url']='javascript:alert(1)';
+check('unsafe consent URL falls back',!str_contains(ssa_consent_statement(),'javascript:'));
 echo json_encode(['suite'=>'settings','checks'=>$checks,'ok'=>true]).PHP_EOL;
 

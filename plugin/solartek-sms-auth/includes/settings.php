@@ -84,6 +84,14 @@ function ssa_store_secret(string $secret) {
 function ssa_service_url(string $path): string { return rtrim((string)ssa_config('service_url'),'/').ssa_config('api_path').ltrim($path,'/'); }
 function ssa_asset_url(string $path): string { return plugins_url('compat/assets/'.ltrim($path,'/'),SSA_FILE); }
 function ssa_privacy_url(): string { return ssa_config('privacy_url') ?: (get_privacy_policy_url() ?: home_url('/privacy-policy/')); }
+/** A site may publish a standalone consent without changing the policy URL. */
+function ssa_consent_statement(string $context='account'): string {
+    $url=function_exists('apply_filters') ? apply_filters('ssa_consent_document_url','',$context) : '';
+    if(is_string($url) && $url!=='' && wp_parse_url($url,PHP_URL_SCHEME)==='https' && wp_parse_url($url,PHP_URL_HOST)) {
+        return 'Даю <a href="'.esc_url($url).'" target="_blank" rel="noopener">согласие на обработку персональных данных</a>. <a href="'.esc_url(ssa_privacy_url()).'" target="_blank" rel="noopener">Политика</a>.';
+    }
+    return 'Согласен на обработку персональных данных по <a href="'.esc_url(ssa_privacy_url()).'" target="_blank" rel="noopener">политике конфиденциальности</a>.';
+}
 function ssa_form_enabled(string $context=''): bool {
     if($context==='tryon')return (bool)ssa_config('tryon');
     if(function_exists('is_user_logged_in')&&is_user_logged_in())return (bool)ssa_config('profile');

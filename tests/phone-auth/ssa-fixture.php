@@ -12,5 +12,6 @@ function ssa_secret_get(): string { return trim((string)file_get_contents(MOTO_S
 function ssa_service_url(string $path): string { return 'https://sms.solartek.ru/api/v1/auth/challenges/'.ltrim($path,'/'); }
 function ssa_asset_url(string $path): string { return '/plugin/solartek-sms-auth/compat/assets/'.$path; }
 function ssa_privacy_url(): string { return get_privacy_policy_url(); }
+function ssa_consent_statement(string $context='account'): string { return 'Согласен на обработку персональных данных по <a href="'.esc_url(ssa_privacy_url()).'" target="_blank" rel="noopener">политике конфиденциальности</a>.'; }
 function ssa_form_enabled(string $context=''): bool { return true; }
 function wp_safe_remote_post($url,$args) { return wp_remote_post($url,$args); }

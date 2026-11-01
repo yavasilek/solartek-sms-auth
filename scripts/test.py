@@ -14,7 +14,7 @@ for name in ['test','antibot','security-audit','legacy-identity','identity-merge
         env={**os.environ,'MOTO_PHONE_FIXTURE_DB':str(pathlib.Path(temp)/'fixture.sqlite')}
         data=json.loads(run(['php','tests/phone-auth/'+name+'.php'],env))
         results.append({'suite':name,'checks':data.get('passed',len(data.get('checks',[])))})
-for name in ['settings','updater']:
+for name in ['settings','updater','consent-documents']:
     file=ROOT/'tests'/('test-'+name+'.php')
     if file.exists(): results.append(json.loads(run(['php',str(file)])))
 print(json.dumps({'ok':True,'php_lint':len(lint),'results':results},ensure_ascii=False))

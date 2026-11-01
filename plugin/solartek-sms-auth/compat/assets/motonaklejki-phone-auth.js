@@ -169,7 +169,7 @@
             finally { busy = false; refresh.disabled = false; submit.disabled = !nonce || !!(captcha && !work); form.removeAttribute('aria-busy'); }
         };
         const send = async (repeat = false) => {
-            if (busy) return;
+            if (busy || (repeat && retryAt > Date.now())) return;
             if (!requireConsent()) return;
             if (!phone.value.trim()) { show('Укажите номер телефона.', true); phone.focus(); return; }
             if (!captcha && !(state.status === 'uncertain' && state.retry_without_antibot)) { await prepareCaptcha(repeat); return; }
