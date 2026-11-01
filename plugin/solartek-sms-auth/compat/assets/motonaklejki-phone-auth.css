@@ -95,6 +95,8 @@
 .moto-phone-auth .moto-auth-code-control .moto-auth-request-code{background:#d14300;color:#fff}
 .moto-phone-auth .moto-auth-code-control .moto-auth-request-code:hover{background:#b83b00;color:#fff}
 .moto-phone-auth button:disabled{background:#e2e6ed;color:#515b66;opacity:1;cursor:not-allowed}
+.moto-phone-auth .moto-auth-code-control .moto-auth-request-code:disabled,
+.moto-phone-auth .moto-auth-code-control .moto-auth-request-code:disabled:hover{background:#e2e6ed;color:#515b66;opacity:1;cursor:not-allowed}
 
 /* Adapt to the available theme content width, not just the browser width. */
 .moto-phone-auth.moto-auth-compact{grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
