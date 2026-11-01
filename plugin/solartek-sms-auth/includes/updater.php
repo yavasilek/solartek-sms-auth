@@ -33,7 +33,7 @@ function ssa_update_transient($transient) {
     $info=(object)['id'=>'https://github.com/'.ssa_config('repository'),'slug'=>'solartek-sms-auth','plugin'=>SSA_BASENAME,
         'new_version'=>$release['version'],'url'=>$release['url'],'package'=>$release['package'],
         'requires'=>$release['requires'],'requires_php'=>$release['requires_php'],'tested'=>$release['tested']];
-    if(version_compare($release['version'],SSA_VERSION,'>')){$transient->response[SSA_BASENAME]=$info;unset($transient->no_update[SSA_BASENAME]);}
+    if(version_compare($release['version'],(string)$transient->checked[SSA_BASENAME],'>')){$transient->response[SSA_BASENAME]=$info;unset($transient->no_update[SSA_BASENAME]);}
     else{$transient->no_update[SSA_BASENAME]=$info;unset($transient->response[SSA_BASENAME]);}
     return $transient;
 }
