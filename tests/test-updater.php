@@ -27,6 +27,7 @@ $count=count($calls);ssa_release_info();check('metadata cached',count($calls)===
 $t=(object)['checked'=>[SSA_BASENAME=>'1.0.0'],'response'=>['unrelated'=>(object)['new_version'=>'9']]];$t=ssa_update_transient($t);
 check('WP update offered',isset($t->response[SSA_BASENAME])&&$t->response[SSA_BASENAME]->new_version==='1.0.1');check('other plugin untouched',isset($t->response['unrelated']));
 $t->checked[SSA_BASENAME]='1.0.1';$t=ssa_update_transient($t);check('updated disk metadata clears stale offer',!isset($t->response[SSA_BASENAME])&&isset($t->no_update[SSA_BASENAME]));
+$http[$url]['body']=json_encode(fixture_release('1.0.2'));ssa_release_info(null,true);$t=ssa_update_transient($t);check('fresh GitHub release reconciles otherwise fresh core cache',isset($t->response[SSA_BASENAME])&&$t->response[SSA_BASENAME]->new_version==='1.0.2');
 $http[$url]['body']=json_encode(array_merge(fixture_release(),['prerelease'=>true]));check('prerelease rejected',is_wp_error(ssa_release_info(null,true)));
 $bad=fixture_release();$bad['assets'][0]['browser_download_url']='https://evil.example/module.zip';$http[$url]['body']=json_encode($bad);check('cross-origin asset rejected',is_wp_error(ssa_release_info(null,true)));
 $repository='../evil';check('bad repo rejected',is_wp_error(ssa_release_info(null,true)));$repository='owner/module';

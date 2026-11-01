@@ -95,7 +95,9 @@ function ssa_background_update(): void {
     try {
         if (is_wp_error(ssa_release_info(null,true))) return;
         wp_update_plugins();
-        $updates=get_site_transient('update_plugins');
+        // Core can return early while its WordPress.org cache is still fresh.
+        // Reconcile our independently refreshed GitHub release on every own tick.
+        $updates=ssa_update_transient(get_site_transient('update_plugins'));
         $offer=$updates->response[SSA_BASENAME]??null;
         // Use WordPress eligibility, integrity hook and automatic fatal-error rollback.
         // This task never installs updates for unrelated plugins, themes or WordPress.
