@@ -98,8 +98,14 @@ body.woocommerce-account.solartek-account-active:not(.logged-in) .st-main--accou
     border-color: var(--ssa-line);
     color: var(--ssa-ink);
 }
+body.woocommerce-account.solartek-account-active:not(.logged-in) .st-main--account .woocommerce .moto-password-auth .password-input input.input-text {
+    padding-inline-end: 56px;
+}
 body.woocommerce-account.solartek-account-active:not(.logged-in) .st-main--account .woocommerce .moto-password-auth button.show-password-input {
     color: var(--ssa-muted);
+    /* Keep the inset and translation paired when the theme changes the field height. */
+    top: 50%;
+    transform: translateY(-50%);
 }
 body.woocommerce-account.solartek-account-active:not(.logged-in) .st-main--account .woocommerce .moto-password-auth button.show-password-input:hover {
     background: var(--ssa-field);
