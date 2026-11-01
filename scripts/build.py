@@ -7,12 +7,12 @@ assert "define('SSA_VERSION', '"+version+"');" in source
 out=ROOT/'dist';out.mkdir(exist_ok=True)
 archive=out/'solartek-sms-auth.zip'
 with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as target:
-    for file in sorted(PLUGIN.rglob('*')):
+    for file in sorted(PLUGIN.rglob('*'), key=lambda p:p.relative_to(PLUGIN).as_posix()):
         if not file.is_file():continue
         assert file.suffix in ['.php','.js','.css','.ttf','.txt'],file
         name='solartek-sms-auth/'+file.relative_to(PLUGIN).as_posix()
-        info=zipfile.ZipInfo(name,(2026,1,1,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED;info.external_attr=0o100644<<16
-        target.writestr(info,file.read_bytes())
+        info=zipfile.ZipInfo(name,(2026,1,1,0,0,0));info.create_system=3;info.compress_type=zipfile.ZIP_DEFLATED;info.external_attr=0o100644<<16
+        target.writestr(info,file.read_bytes(),compress_type=zipfile.ZIP_DEFLATED,compresslevel=9)
 sha=hashlib.sha256(archive.read_bytes()).hexdigest()
 revision=subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,capture_output=True,text=True)
 commit=revision.stdout.strip() if revision.returncode==0 else 'uncommitted'
