@@ -1,0 +1,7 @@
+/* Retain the native Users table and its responsive row toggles. */
+@media (min-width: 783px) {
+    .wp-list-table.users .column-ssa_phone { width: 180px; }
+}
+.ssa-user-phone { margin-bottom: 6px; }
+.ssa-user-phone:last-child { margin-bottom: 0; }
+.ssa-user-phone__number { white-space: nowrap; }

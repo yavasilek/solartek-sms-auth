@@ -88,3 +88,51 @@ function ssa_admin_users_phone_search(WP_User_Query $query): void {
 add_filter('users_list_table_query_args', 'ssa_admin_users_query_args');
 add_filter('user_search_columns', 'ssa_admin_users_search_columns', PHP_INT_MAX, 3);
 add_action('pre_user_query', 'ssa_admin_users_phone_search', 20);
+
+function ssa_admin_users_phone_columns(array $columns): array {
+    if (!ssa_admin_users_search_allowed()) return $columns;
+    $result = [];
+    foreach ($columns as $key => $label) {
+        $result[$key] = $label;
+        if ($key === 'email') $result['ssa_phone'] = 'Телефон';
+    }
+    if (!isset($result['ssa_phone'])) $result['ssa_phone'] = 'Телефон';
+    return $result;
+}
+
+function ssa_admin_users_phone_column($output, string $column, int $userId) {
+    if ($column !== 'ssa_phone' || !ssa_admin_users_search_allowed()) return $output;
+    $phones = [];
+    foreach (['_moto_verified_phone' => 'SMS подтвержден', 'billing_phone' => 'Покупатель', 'shipping_phone' => 'Доставка'] as $key => $label) {
+        $raw = get_user_meta($userId, $key, true);
+        if (!is_string($raw) || trim($raw) === '') continue;
+        $raw = trim($raw);
+        $digits = ssa_admin_users_phone_digits($raw);
+        if (strlen($digits) === 10) $digits = '7'.$digits;
+        if (strlen($digits) === 11 && $digits[0] === '8') $digits[0] = '7';
+        $identity = $digits !== '' ? $digits : $raw;
+        $display = $raw;
+        if (strlen($digits) === 11 && $digits[0] === '7') {
+            $display = '+7 '.substr($digits, 1, 3).' '.substr($digits, 4, 3).'-'.substr($digits, 7, 2).'-'.substr($digits, 9, 2);
+        }
+        if (!isset($phones[$identity])) $phones[$identity] = ['display' => $display, 'labels' => []];
+        $phones[$identity]['labels'][] = $label;
+    }
+    if (!$phones) return '-';
+    $html = '';
+    foreach ($phones as $phone) {
+        $html .= '<div class="ssa-user-phone"><span class="ssa-user-phone__number">'.esc_html($phone['display'])
+            .'</span><br><span class="description">'.esc_html(implode(', ', $phone['labels'])).'</span></div>';
+    }
+    return $html;
+}
+
+function ssa_admin_users_phone_column_assets(string $hook): void {
+    if ($hook === 'users.php' && ssa_admin_users_search_allowed()) {
+        wp_enqueue_style('ssa-admin-users', plugins_url('assets/admin-users.css', SSA_FILE), [], SSA_VERSION);
+    }
+}
+
+add_filter('manage_users_columns', 'ssa_admin_users_phone_columns');
+add_filter('manage_users_custom_column', 'ssa_admin_users_phone_column', 10, 3);
+add_action('admin_enqueue_scripts', 'ssa_admin_users_phone_column_assets');
