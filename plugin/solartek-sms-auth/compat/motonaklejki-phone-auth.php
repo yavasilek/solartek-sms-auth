@@ -449,7 +449,7 @@ function moto_phone_render($context = '', $product_id = 0): void {
             </div>
             <div class="moto-phone-auth__field" data-code-field hidden>
                 <label for="<?php echo esc_attr($id); ?>code">Код из SMS</label>
-                <input id="<?php echo esc_attr($id); ?>code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{4}([0-9]{2})?" aria-describedby="<?php echo esc_attr($id); ?>status">
+                <input id="<?php echo esc_attr($id); ?>code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Код из SMS" maxlength="6" pattern="[0-9]{4}([0-9]{2})?" aria-describedby="<?php echo esc_attr($id); ?>status">
             </div>
             <label class="moto-phone-auth__consent"><input name="consent" type="checkbox" required><span><?php echo ssa_consent_statement($context); ?></span></label>
             <button type="submit" class="button moto-phone-auth__submit" disabled>Пройти проверку</button>

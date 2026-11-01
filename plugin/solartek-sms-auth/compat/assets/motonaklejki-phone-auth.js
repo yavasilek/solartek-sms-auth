@@ -39,7 +39,7 @@
             login.className = 'button moto-phone-auth__submit moto-auth-login'; login.textContent = 'Войти'; login.disabled = true;
             const footer = document.createElement('div'); footer.className = 'moto-auth-login-actions';
             footer.append(actions, login); form.append(footer);
-            field.hidden = false; code.disabled = true; code.placeholder = 'Код';
+            field.hidden = false; code.disabled = true; code.placeholder = 'Код из SMS';
             resend.hidden = true;
             // The controller owns the request button; mirror its busy state on login.
             const syncLogin = () => { login.disabled = submit.disabled || !['sent', 'verified'].includes(state.status); };
