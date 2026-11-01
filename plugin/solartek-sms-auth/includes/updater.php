@@ -99,7 +99,14 @@ function ssa_background_update(): void {
         $offer=$updates->response[SSA_BASENAME]??null;
         // Use WordPress eligibility, integrity hook and automatic fatal-error rollback.
         // This task never installs updates for unrelated plugins, themes or WordPress.
-        if ($offer) $auto->update('plugin',$offer);
+        if ($offer) {
+            // The wizard explicitly opts this installed module into release updates,
+            // including sites whose parent directory is a Git checkout.
+            $vcs=static function($checkout,$context){return $context===WP_PLUGIN_DIR?false:$checkout;};
+            add_filter('automatic_updates_is_vcs_checkout',$vcs,PHP_INT_MAX,2);
+            try { $auto->update('plugin',$offer); }
+            finally { remove_filter('automatic_updates_is_vcs_checkout',$vcs,PHP_INT_MAX); }
+        }
     } finally {
         WP_Upgrader::release_lock('auto_updater');
     }

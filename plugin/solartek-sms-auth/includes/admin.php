@@ -91,7 +91,7 @@ function ssa_admin_page(): void {
         echo '<p>Сайты получают общие выпуски из GitHub. Изменения разрабатываются в репозитории, проходят проверки и публикуются новым релизом. Настройки этого сайта при обновлении сохраняются.</p>';
         ssa_admin_input('repository','Репозиторий GitHub','text','Общий источник: yavasilek/solartek-sms-auth. Меняйте только при использовании собственного форка.');
         ssa_admin_checkbox('automatic_updates','Автоматически устанавливать новые стабильные версии через WordPress');
-        echo '<p class="description">Нужны работающий WP-Cron или системный cron и права WordPress на обновление плагинов. Проверка релизов выполняется периодически; установка не происходит мгновенно после публикации.</p>';
+        echo '<p class="description">Проверяем релизы дважды в сутки. Нужны работающий WP-Cron или системный cron и права WordPress на обновление плагинов. При включении заменяем код этого модуля опубликованным релизом, в том числе на сайте внутри Git. Локальные правки установленного модуля будут заменены. Остальные плагины эта задача не обновляет.</p>';
     }else{
         echo '<ul class="ssa-requirements">';foreach(ssa_requirements() as $name=>$ok)echo '<li><strong>'.($ok?'Готово: ':'Требуется: ').'</strong>'.esc_html($name).'</li>';echo '</ul>';
         echo '<dl class="ssa-summary"><dt>Сервис</dt><dd>'.esc_html(ssa_config('service_url').ssa_config('api_path')).'</dd><dt>Ключ</dt><dd>'.(ssa_secret_get()!==''?'Сохранён и зашифрован':'Не настроен').'</dd><dt>Релизы</dt><dd>'.esc_html(ssa_config('repository')).'</dd><dt>Лимит SMS на сайт</dt><dd>'.(int)ssa_config('daily_limit').' за сутки</dd></dl>';
