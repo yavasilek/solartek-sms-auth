@@ -18,3 +18,9 @@
 .woocommerce-checkout .moto-password-auth .moto-auth-login-actions { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .woocommerce-checkout .moto-password-auth .moto-auth-options .woocommerce-form-login__rememberme { width: auto; min-height: 44px; gap: 6px; }
 .woocommerce-checkout .moto-password-auth .moto-auth-login-actions > .woocommerce-form-login__submit { grid-column: auto; }
+
+/* Checkout SMS login mirrors the native password action and optional persistence choice. */
+.woocommerce-checkout .moto-phone-auth[data-moto-phone-auth][data-destination="checkout"] .moto-auth-login-actions { grid-template-columns: minmax(0, 1fr); }
+.woocommerce-checkout .moto-phone-auth[data-moto-phone-auth][data-destination="checkout"] .moto-auth-login-actions > .moto-auth-login { grid-column: auto; }
+.woocommerce-checkout .moto-phone-auth label.moto-phone-auth__remember { display: flex; align-items: center; gap: 6px; min-height: 44px; margin: 0; font-size: 14px; font-weight: 400; line-height: 1.5; cursor: pointer; }
+.woocommerce-checkout .moto-phone-auth__remember input[type=checkbox] { appearance: auto; flex: none; width: 20px; height: 20px; margin: 0; padding: 0; accent-color: var(--ssa-accent, #b83b00); }

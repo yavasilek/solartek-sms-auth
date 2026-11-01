@@ -7,6 +7,7 @@
         const phone = form.elements.phone;
         const code = form.elements.code;
         const consent = form.elements.consent;
+        const remember = form.elements.remember;
         const submit = form.querySelector('[type=submit]');
         const field = form.querySelector('[data-code-field]');
         const actions = form.querySelector('.moto-phone-auth__actions');
@@ -206,6 +207,7 @@
             busy = true; submit.disabled = true; resend.disabled = true; change.disabled = true; form.setAttribute('aria-busy', 'true'); show('Проверяем код…');
             try {
                 const result = await request('verify', {code: code.value, destination: root.dataset.destination || 'account',
+                    ...(remember ? {remember: remember.checked ? '1' : '0'} : {}),
                     sip_product: root.dataset.sipProduct || new URLSearchParams(location.search).get('sip_product') || ''});
                 if (!result.success) { busy = false; render(result.data.state || state); show(result.data.message || 'Не удалось проверить код.', true); code.focus(); return; }
                 const target = new URL(result.data.redirect, location.href);

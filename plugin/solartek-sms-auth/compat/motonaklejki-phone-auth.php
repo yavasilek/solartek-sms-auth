@@ -324,7 +324,7 @@ function moto_phone_resolve_user(string $phone) {
     return $user;
 }
 
-function moto_phone_verify(string $session, string $code) {
+function moto_phone_verify(string $session, string $code, bool $remember = true) {
     $key = 'session:' . $session;
     $lock = moto_phone_lock($key);
     if (!$lock) return moto_phone_error('busy', 'Предыдущий запрос ещё выполняется.', 409);
@@ -362,7 +362,14 @@ function moto_phone_verify(string $session, string $code) {
         unset($state['challenge_id'], $state['phone'], $state['idempotency']);
         moto_phone_store($key, $state); // Consume under lock before issuing any auth cookie.
         if (!$linking) {
-            wc_set_customer_auth_cookie($user->ID);
+            if ($remember) {
+                wc_set_customer_auth_cookie($user->ID);
+            } else {
+                wp_set_current_user($user->ID);
+                wp_set_auth_cookie($user->ID, false);
+                $session_handler = WC()->session ?? null;
+                if (is_callable([$session_handler, 'init_session_cookie'])) $session_handler->init_session_cookie();
+            }
             do_action('wp_login', $user->user_login, $user);
         }
         return ['redirect' => wc_get_page_permalink('myaccount'), 'linked' => $linking];
@@ -400,7 +407,7 @@ function moto_phone_ajax(): void {
             }
         } elseif ($operation === 'verify') {
             $code = isset($_POST['code']) && is_string($_POST['code']) ? trim(wp_unslash($_POST['code'])) : '';
-            $result = moto_phone_verify($session, $code);
+            $result = moto_phone_verify($session, $code, ($_POST['remember'] ?? '1') === '1');
             if (!is_wp_error($result) && !$result['linked'] && ($_POST['destination'] ?? '') === 'checkout') $result['redirect'] = wc_get_checkout_url();
             if (!is_wp_error($result) && !$result['linked'] && ($_POST['destination'] ?? '') !== 'checkout') $result['redirect'] = apply_filters('moto_phone_auth_redirect', $result['redirect']);
         } else $result = moto_phone_error('operation', 'Неизвестная операция.');
@@ -423,12 +430,13 @@ function moto_phone_render($context = '', $product_id = 0): void {
     $rendered = true;
     $linking = get_current_user_id() > 0;
     $tryon = $context === 'tryon' && !$linking;
+    $checkout = function_exists('is_checkout') && is_checkout();
     $id = wp_unique_id('moto-phone-');
     $verified = $linking ? get_user_meta(get_current_user_id(), '_moto_verified_phone', true) : '';
     $privacy = ssa_privacy_url();
     if (!$privacy) $privacy = home_url('/privacy-policy/');
     ?>
-    <section class="moto-phone-auth" data-moto-phone-auth<?php if ($tryon): ?> data-context="tryon" data-lazy="1" data-sip-product="<?php echo esc_attr((string) $product_id); ?>"<?php endif; ?> data-worker="<?php echo esc_url(ssa_asset_url('motonaklejki-phone-antibot-worker.js') . '?ver=' . SSA_VERSION); ?>" data-linking="<?php echo $linking ? '1' : '0'; ?>" data-destination="<?php echo function_exists('is_checkout') && is_checkout() ? 'checkout' : 'account'; ?>" data-endpoint="<?php echo esc_url(admin_url('admin-ajax.php')); ?>" aria-labelledby="<?php echo esc_attr($id); ?>title">
+    <section class="moto-phone-auth" data-moto-phone-auth<?php if ($tryon): ?> data-context="tryon" data-lazy="1" data-sip-product="<?php echo esc_attr((string) $product_id); ?>"<?php endif; ?> data-worker="<?php echo esc_url(ssa_asset_url('motonaklejki-phone-antibot-worker.js') . '?ver=' . SSA_VERSION); ?>" data-linking="<?php echo $linking ? '1' : '0'; ?>" data-destination="<?php echo $checkout ? 'checkout' : 'account'; ?>" data-endpoint="<?php echo esc_url(admin_url('admin-ajax.php')); ?>" aria-labelledby="<?php echo esc_attr($id); ?>title">
         <div class="moto-phone-auth__intro">
             <h2 id="<?php echo esc_attr($id); ?>title"><?php echo $tryon ? 'Войдите для примерки' : ($linking ? 'Телефон для входа' : 'Войти по телефону'); ?></h2>
             <p><?php echo $tryon ? 'Примерка сохранится в вашем аккаунте. Подтвердите номер — и перейдём к фото техники.' : ($linking ? 'Подтвердите номер кодом из SMS. После этого сможете входить без пароля.' : 'Получите код из SMS. Если вы здесь впервые, создадим аккаунт покупателя.'); ?></p>
@@ -452,6 +460,9 @@ function moto_phone_render($context = '', $product_id = 0): void {
                 <input id="<?php echo esc_attr($id); ?>code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Код из SMS" maxlength="6" pattern="[0-9]{4}([0-9]{2})?" aria-describedby="<?php echo esc_attr($id); ?>status">
             </div>
             <label class="moto-phone-auth__consent"><input name="consent" type="checkbox" required><span><?php echo ssa_consent_statement($context); ?></span></label>
+            <?php if ($checkout && !$linking): ?>
+            <label class="moto-phone-auth__remember" for="<?php echo esc_attr($id); ?>remember"><input id="<?php echo esc_attr($id); ?>remember" name="remember" type="checkbox" value="1"><span>Запомнить меня</span></label>
+            <?php endif; ?>
             <button type="submit" class="button moto-phone-auth__submit" disabled>Пройти проверку</button>
             <div class="moto-phone-auth__actions" hidden><button type="button" data-resend>Отправить код ещё раз</button><button type="button" data-change>Изменить номер</button></div>
             <p id="<?php echo esc_attr($id); ?>status" class="moto-phone-auth__status" role="status" aria-live="polite" aria-atomic="true">Подготавливаем безопасный вход…</p>
