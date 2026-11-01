@@ -18,7 +18,7 @@ function moto_phone_legacy_owner(string $phone) {
     }
     if (!$matches) return null;
     $user = get_user_by('id', (int) array_key_first($matches));
-    if (!moto_phone_customer($user)) return moto_phone_error('password_required', 'Для этого аккаунта используйте обычный вход по паролю.', 403);
+    if (!moto_phone_login_allowed($user)) return moto_phone_error('password_required', 'Для этого аккаунта используйте обычный вход по паролю.', 403);
     $verified = get_user_meta($user->ID, '_moto_verified_phone', true);
     if (($verified !== '' && $verified !== $phone) || moto_phone_normalize(get_user_meta($user->ID, 'billing_phone', true)) !== $phone) {
         return moto_phone_error('account_conflict', 'Номер требует проверки. Войдите по почте или обратитесь в поддержку.', 409);

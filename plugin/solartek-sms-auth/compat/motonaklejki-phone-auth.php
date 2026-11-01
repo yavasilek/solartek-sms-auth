@@ -116,6 +116,14 @@ function moto_phone_customer($user): bool {
     return true;
 }
 
+/** Login policy is separate from customer-only account merge eligibility. */
+function moto_phone_login_allowed($user): bool {
+    if (moto_phone_customer($user)) return true;
+    return ssa_config('all_roles') === true && $user instanceof WP_User && $user->ID > 0
+        && (int) $user->user_status === 0 && !empty($user->roles)
+        && !(function_exists('moto_account_is_merged') ? moto_account_is_merged($user->ID) : get_user_meta($user->ID, '_moto_merged_into', true) !== '');
+}
+
 function moto_phone_binding(): string {
     return (string) get_current_user_id() . ':' . moto_phone_hash(wp_get_session_token());
 }
@@ -293,9 +301,9 @@ function moto_phone_resolve_user(string $phone) {
     $current = get_current_user_id();
     if ($current) {
         $user = wp_get_current_user();
-        if (!moto_phone_customer($user) || ($owner && $owner->ID !== $current) || ($legacy && $legacy->ID !== $current)) return moto_phone_error('account_conflict', 'Номер нельзя привязать к этому аккаунту.', 409);
+        if (!moto_phone_login_allowed($user) || ($owner && $owner->ID !== $current) || ($legacy && $legacy->ID !== $current)) return moto_phone_error('account_conflict', 'Номер нельзя привязать к этому аккаунту.', 409);
     } elseif ($owner) {
-        if (!moto_phone_customer($owner)) return moto_phone_error('password_required', 'Для этого аккаунта используйте обычный вход по паролю.', 403);
+        if (!moto_phone_login_allowed($owner)) return moto_phone_error('password_required', 'Для этого аккаунта используйте обычный вход по паролю.', 403);
         return $owner;
     } elseif ($legacy) {
         // This path is reached under the phone lock, after live OTP verification.
@@ -372,7 +380,7 @@ function moto_phone_ajax(): void {
     try {
         if (!moto_phone_enabled()) { wp_send_json_error(['message' => 'Вход по SMS пока недоступен.'], 503); return; }
         if (!moto_phone_same_origin()) { wp_send_json_error(['message' => 'Обновите страницу и повторите запрос.'], 403); return; }
-        if (get_current_user_id() && !moto_phone_customer(wp_get_current_user())) { wp_send_json_error(['message' => 'Для этого аккаунта используйте обычные настройки безопасности.'], 403); return; }
+        if (get_current_user_id() && !moto_phone_login_allowed(wp_get_current_user())) { wp_send_json_error(['message' => 'Для этого аккаунта используйте обычные настройки безопасности.'], 403); return; }
         $operation = isset($_POST['operation']) && is_string($_POST['operation']) ? $_POST['operation'] : '';
         $session = moto_phone_session($operation === 'context');
         if (!$session) { wp_send_json_error(['message' => 'Разрешите cookie и обновите страницу.'], 403); return; }
@@ -411,7 +419,7 @@ function moto_phone_ajax(): void {
 
 function moto_phone_render($context = '', $product_id = 0): void {
     static $rendered = false;
-    if ($rendered || !ssa_form_enabled($context) || !moto_phone_enabled() || (get_current_user_id() && !moto_phone_customer(wp_get_current_user()))) return;
+    if ($rendered || !ssa_form_enabled($context) || !moto_phone_enabled() || (get_current_user_id() && !moto_phone_login_allowed(wp_get_current_user()))) return;
     $rendered = true;
     $linking = get_current_user_id() > 0;
     $tryon = $context === 'tryon' && !$linking;

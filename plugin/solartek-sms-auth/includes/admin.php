@@ -15,8 +15,8 @@ function ssa_admin_save(): void {
     ssa_require_admin();check_admin_referer('ssa_save');
     $previousRepository=(string)ssa_config('repository');
     $step=max(1,min(4,(int)($_POST['step']??1)));$posted=wp_unslash($_POST);$changes=[];
-    $fields=[1=>['service_url','api_path','request_timeout'],2=>array_merge(array_keys(ssa_numeric_ranges()),['privacy_url','account','checkout','profile','tryon','merge']),3=>['repository','automatic_updates'],4=>['enabled']];
-    foreach($fields[$step] as $key){if(in_array($key,['account','checkout','profile','tryon','merge','automatic_updates','enabled'],true))$changes[$key]=$posted[$key]??'0';elseif(isset($posted[$key]))$changes[$key]=$posted[$key];}
+    $fields=[1=>['service_url','api_path','request_timeout'],2=>array_merge(array_keys(ssa_numeric_ranges()),['privacy_url','account','checkout','profile','tryon','merge','all_roles']),3=>['repository','automatic_updates'],4=>['enabled']];
+    foreach($fields[$step] as $key){if(in_array($key,['account','checkout','profile','tryon','merge','all_roles','automatic_updates','enabled'],true))$changes[$key]=$posted[$key]??'0';elseif(isset($posted[$key]))$changes[$key]=$posted[$key];}
     $settings=ssa_validate_settings($changes);
     if(!is_wp_error($settings)&&$step===1){
         $secret=$posted['api_key']??'';
@@ -83,8 +83,10 @@ function ssa_admin_page(): void {
         echo '<div class="ssa-field"><label for="ssa-api-key">Ключ API</label><div><input class="regular-text" id="ssa-api-key" type="password" name="api_key" value="" autocomplete="new-password" spellcheck="false"><p class="description">'.(ssa_secret_get()!==''?'Ключ сохранён. Оставьте поле пустым, чтобы сохранить его.':'Введите ключ. Он хранится в зашифрованном виде и не попадает в Git или архив плагина.').'</p></div></div>';
         ssa_admin_input('request_timeout','Ожидание ответа, секунд','number');
     }elseif($step===2){
-        echo '<p>Поддерживаются мобильные номера России (+7 9…). CAPTCHA и подтверждение SMS обязательны; вход администратора по SMS закрыт.</p><div class="ssa-checks">';
+        echo '<p>Поддерживаются мобильные номера России (+7 9…). CAPTCHA и подтверждение SMS обязательны. По умолчанию вход доступен покупателям и подписчикам; для остальных ролей включите разрешение ниже.</p><div class="ssa-checks">';
         foreach(['account'=>'Вход в личном кабинете','checkout'=>'Вход при оформлении заказа','profile'=>'Подтверждение телефона и имя в профиле','tryon'=>'Вход во встроенном окне примерки, если сайт его использует','merge'=>'Объединение телефонного и почтового аккаунта после проверки владения'] as $k=>$l)ssa_admin_checkbox($k,$l);echo '</div>';
+        ssa_admin_checkbox('all_roles','Разрешить вход по SMS всем ролям, включая администраторов и менеджеров');
+        echo '<p class="description">Код SMS дает доступ к существующему аккаунту с его текущими правами. Для общего номера используется подтвержденный владелец; если владельца определить нельзя, потребуется вход по паролю. Объединение аккаунтов сотрудников недоступно.</p>';
         ssa_admin_input('privacy_url','Политика конфиденциальности','url','Пустое поле использует политику, выбранную в настройках WordPress.');
         echo '<h3>Лимиты отправки SMS</h3><div class="ssa-numbers">';
         foreach(['phone_hourly_limit'=>'На номер за час','phone_daily_limit'=>'На номер за сутки','ip_hourly_limit'=>'На IP за час','ip_daily_limit'=>'На IP за сутки','daily_limit'=>'На сайт за сутки'] as $k=>$l)ssa_admin_input($k,$l,'number');echo '</div>';

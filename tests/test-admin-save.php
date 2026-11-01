@@ -22,12 +22,13 @@ require __DIR__.'/../plugin/solartek-sms-auth/includes/settings.php';
 require __DIR__.'/../plugin/solartek-sms-auth/includes/admin.php';
 $checks=0;
 foreach([1,2,3,4,'repository-change'] as $scenario){
-    $options=['ssa_settings'=>ssa_defaults()];$invalidations=[];
+    $options=['ssa_settings'=>array_merge(ssa_defaults(),['all_roles'=>true])];$invalidations=[];
     ssa_store_secret('fixture-'.bin2hex(random_bytes(20)));$secret=$options['ssa_secret'];
     $_POST=['step'=>$scenario==='repository-change'?3:$scenario];
     if($scenario==='repository-change')$_POST['repository']='another-owner/sms-auth';
     try{ssa_admin_save();throw new RuntimeException('Missing redirect');}catch(SaveRedirect $redirect){}
     if($options['ssa_secret']!==$secret)throw new RuntimeException('Saved key changed');$checks++;
+    if($options['ssa_settings']['all_roles']!==($scenario!==2))throw new RuntimeException('Role setting changed on wrong wizard step');$checks++;
     $expected=$scenario==='repository-change'?['update_plugins']:[];
     if($invalidations!==$expected)throw new RuntimeException('Unexpected update cache invalidation on '.$scenario);$checks++;
     if(($options['ssa_settings']['setup_step']??0)!==min(4,(int)$_POST['step']+1))throw new RuntimeException('Wizard did not advance');$checks++;

@@ -9,7 +9,7 @@ lint = list((ROOT/'plugin').rglob('*.php')) + list((ROOT/'tests').rglob('*.php')
 for file in lint: run(['php','-l',str(file)])
 for file in (ROOT/'plugin').rglob('*.js'): run(['node','--check',str(file)])
 results=[]
-for name in ['test','antibot','security-audit','legacy-identity','identity-merge','merge-cart','merge-preview','merge-discovery','profile','account-layout']:
+for name in ['test','antibot','security-audit','legacy-identity','identity-merge','merge-cart','merge-preview','merge-discovery','profile','account-layout','all-roles']:
     with tempfile.TemporaryDirectory(prefix='ssa-regression-') as temp:
         env={**os.environ,'MOTO_PHONE_FIXTURE_DB':str(pathlib.Path(temp)/'fixture.sqlite')}
         data=json.loads(run(['php','tests/phone-auth/'+name+'.php'],env))

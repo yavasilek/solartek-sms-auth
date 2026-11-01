@@ -15,6 +15,9 @@ function plugins_url($path,$file){return 'https://shop.example.test/wp-content/p
 define('SSA_FILE',__FILE__);
 require __DIR__.'/../plugin/solartek-sms-auth/includes/settings.php';
 $checks=0;function check($name,$ok){global $checks;if(!$ok)throw new RuntimeException($name);$checks++;}
+check('staff SMS remains opt in',ssa_config('all_roles')===false);
+check('all roles setting accepts explicit opt in',ssa_validate_settings(['all_roles'=>'1'])['all_roles']===true);
+check('all roles setting can be disabled',ssa_validate_settings(['all_roles'=>'0'])['all_roles']===false);
 check('hostname normalized',ssa_validate_service_url('sms.example.test')==='https://sms.example.test');
 foreach(['http://example.test','https://user:pass@example.test','https://example.test/?token=x','https://127.0.0.1','https://10.0.0.1','https://localhost','https://example.test:8443'] as $url)check('unsafe URL rejected',is_wp_error(ssa_validate_service_url($url)));
 check('reverse proxy subpath allowed',ssa_validate_service_url('https://api.example.test/sms/')==='https://api.example.test/sms');

@@ -100,7 +100,7 @@ function moto_account_profile_render_name(): void {
 
 function moto_account_profile_render_phone(): void {
     if (!function_exists('moto_phone_render')) return;
-    $verified = moto_account_profile_customer() ? moto_account_profile_verified_phone(get_current_user_id()) : '';
+    $verified = is_user_logged_in() && moto_phone_login_allowed(wp_get_current_user()) ? moto_account_profile_verified_phone(get_current_user_id()) : '';
     if ($verified === '') { moto_phone_render(); return; }
     $masked = substr($verified, 0, 2) . ' ••• ••• ' . substr($verified, -4);
     ?>
@@ -121,7 +121,7 @@ function moto_account_profile_hooks(): void {
 }
 
 function moto_account_profile_assets(): void {
-    if (!function_exists('is_account_page') || !is_account_page() || !moto_account_profile_customer()) return;
+    if (!function_exists('is_account_page') || !is_account_page() || !is_user_logged_in() || !moto_phone_login_allowed(wp_get_current_user())) return;
     $file = __DIR__ . '/assets/motonaklejki-account-profile.css';
     wp_enqueue_style('moto-account-profile', ssa_asset_url('motonaklejki-account-profile.css'), [], SSA_VERSION);
 }

@@ -6,7 +6,7 @@ function ssa_defaults(): array {
         'request_timeout'=>15, 'phone_hourly_limit'=>3, 'phone_daily_limit'=>10, 'ip_hourly_limit'=>10,
         'ip_daily_limit'=>30, 'daily_limit'=>100, 'captcha_ttl'=>180, 'captcha_attempts'=>3, 'captcha_bits'=>18,
         'captcha_ip_minute'=>5, 'captcha_ip_hour'=>30, 'captcha_browser_minute'=>3, 'captcha_browser_hour'=>10,
-        'account'=>true, 'checkout'=>true, 'profile'=>true, 'tryon'=>true, 'merge'=>true, 'privacy_url'=>'',
+        'account'=>true, 'checkout'=>true, 'profile'=>true, 'tryon'=>true, 'merge'=>true, 'all_roles'=>false, 'privacy_url'=>'',
         'repository'=>'yavasilek/solartek-sms-auth', 'automatic_updates'=>true, 'setup_step'=>1, 'configured'=>false];
 }
 function ssa_config(string $key) {
@@ -56,7 +56,7 @@ function ssa_validate_settings(array $input) {
         if (!is_scalar($input[$key]) || !preg_match('/^[0-9]+$/D',(string)$input[$key]) || (int)$input[$key]<$min || (int)$input[$key]>$max) return new WP_Error('ssa_limit','Значение «'.$key.'» должно быть от '.$min.' до '.$max.'.');
         $out[$key]=(int)$input[$key];
     }
-    foreach (['enabled','account','checkout','profile','tryon','merge','automatic_updates'] as $key) if(array_key_exists($key,$input))$out[$key]=in_array($input[$key],[true,1,'1','on'],true);
+    foreach (['enabled','account','checkout','profile','tryon','merge','all_roles','automatic_updates'] as $key) if(array_key_exists($key,$input))$out[$key]=in_array($input[$key],[true,1,'1','on'],true);
     if($out['phone_daily_limit']<$out['phone_hourly_limit'] || $out['ip_daily_limit']<$out['ip_hourly_limit'])return new WP_Error('ssa_limits','Суточный лимит не может быть меньше часового.');
     return $out;
 }
