@@ -2,10 +2,16 @@
 defined('ABSPATH') || exit;
 
 /** Locks are reentrant in this request and live through WooCommerce shutdown saves. */
-function moto_merge_identity_lock(int $id): bool {
+function moto_merge_identity_lock(int $id, int $wait_milliseconds = 0): bool {
     if (isset($GLOBALS['moto_merge_order_locks'][$id])) return true;
-    $token = moto_phone_lock('identity-user:' . $id);
-    if (!$token) return false;
+    $deadline = hrtime(true) + max(0, $wait_milliseconds) * 1000000;
+    do {
+        $token = moto_phone_lock('identity-user:' . $id);
+        if ($token) break;
+        $remaining = $deadline - hrtime(true);
+        if ($remaining <= 0) return false;
+        usleep((int) min(50000, ceil($remaining / 1000)));
+    } while (true);
     $GLOBALS['moto_merge_order_locks'][$id] = $token;
     static $registered = false;
     if (!$registered) { register_shutdown_function('moto_merge_order_unlock'); $registered = true; }
@@ -27,7 +33,9 @@ function moto_merge_cart_guard($session = null): void {
     }
     $session = $session ?: (WC()->session ?? null);
     if (!$session || !is_callable([$session,'get'])) return;
-    if (!moto_merge_identity_lock($id)) throw new WC_Data_Exception('moto_cart_busy','Аккаунт сейчас объединяется. Повторите действие через несколько секунд.',409);
+    // Ordinary page and AJAX requests can overlap until their shutdown saves.
+    if (!moto_merge_identity_lock($id, 2000)) throw new WC_Data_Exception('moto_cart_busy','Корзина сейчас обновляется. Повторите действие через несколько секунд.',409);
+    if (moto_account_is_merged($id)) throw new WC_Data_Exception('moto_account_merged','Аккаунты объединены. Обновите страницу корзины.',409);
     if (moto_merge_cart_epoch($id) !== (string)$session->get('_moto_merge_epoch','')) throw new WC_Data_Exception('moto_cart_changed','Корзина изменилась после объединения аккаунтов. Обновите страницу.',409);
 }
 
@@ -45,7 +53,12 @@ function moto_merge_session_handler($class) {
     return 'Moto_Merge_Session_Handler';
 }
 
-function moto_merge_cart_hook(): void { moto_merge_cart_guard(); }
+function moto_merge_cart_hook(): void {
+    try { moto_merge_cart_guard(); }
+    catch (WC_Data_Exception $error) {
+        wp_die(esc_html($error->getMessage()), 'Обновление корзины', ['response' => 409, 'back_link' => true]);
+    }
+}
 
 function moto_merge_cart_array($cart): array {
     if ($cart === null || $cart === '') return [];
