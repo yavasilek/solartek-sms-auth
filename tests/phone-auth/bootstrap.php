@@ -81,7 +81,11 @@ $fixtureCalls = [];
 $fixtureLoginCalls = [];
 $fixtureActions = [];
 function add_action($name, $callback, ...$args) { global $fixtureActions; $fixtureActions[$name][] = $callback; }
-function apply_filters($name, $value) { global $fixtureActions; foreach ($fixtureActions[$name] ?? [] as $callback) $value = $callback($value); return $value; }
+function add_filter($name, $callback, ...$args) { add_action($name, $callback, ...$args); }
+function apply_filters($name, $value, ...$args) { global $fixtureActions; foreach ($fixtureActions[$name] ?? [] as $callback) $value = $callback($value, ...$args); return $value; }
+if (!function_exists('is_email')) {
+    function is_email($value) { return is_string($value) && filter_var($value, FILTER_VALIDATE_EMAIL) ? $value : false; }
+}
 function WC() { return $GLOBALS['fixtureWC'] ?? (object) []; }
 function wp_salt($scheme) { return 'fixture-salt-constant-not-a-credential'; }
 function is_wp_error($value) { return $value instanceof WP_Error; }

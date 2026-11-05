@@ -30,6 +30,12 @@ function moto_phone_enabled(): bool {
     return ssa_config('enabled') === true && function_exists('WC') && moto_phone_key() !== '';
 }
 
+function moto_phone_email_change_notification($send, array $user) {
+    // WordPress notifies the previous address, which SMS-only accounts lack.
+    $email = $user['user_email'] ?? '';
+    return is_string($email) && is_email($email) ? $send : false;
+}
+
 function moto_phone_normalize($value): string {
     if (!is_string($value) || strlen($value) > 128) return '';
     // Accept copied typography as well as ordinary phone punctuation. Reject
@@ -505,6 +511,7 @@ function moto_phone_cleanup(): void {
     }
 }
 
+add_filter('send_email_change_email', 'moto_phone_email_change_notification', 10, 2);
 add_action('wp_ajax_nopriv_moto_phone_auth', 'moto_phone_ajax');
 add_action('wp_ajax_moto_phone_auth', 'moto_phone_ajax');
 add_action('woocommerce_before_customer_login_form', 'moto_phone_render', 5);
