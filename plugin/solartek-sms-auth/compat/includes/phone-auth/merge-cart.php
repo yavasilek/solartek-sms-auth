@@ -33,8 +33,7 @@ function moto_merge_cart_guard($session = null): void {
     }
     $session = $session ?: (WC()->session ?? null);
     if (!$session || !is_callable([$session,'get'])) return;
-    // Ordinary page and AJAX requests can overlap until their shutdown saves.
-    if (!moto_merge_identity_lock($id, 2000)) throw new WC_Data_Exception('moto_cart_busy','Корзина сейчас обновляется. Повторите действие через несколько секунд.',409);
+    if (!moto_merge_identity_lock($id)) throw new WC_Data_Exception('moto_cart_busy','Корзина сейчас обновляется. Повторите действие через несколько секунд.',409);
     if (moto_account_is_merged($id)) throw new WC_Data_Exception('moto_account_merged','Аккаунты объединены. Обновите страницу корзины.',409);
     if (moto_merge_cart_epoch($id) !== (string)$session->get('_moto_merge_epoch','')) throw new WC_Data_Exception('moto_cart_changed','Корзина изменилась после объединения аккаунтов. Обновите страницу.',409);
 }
@@ -43,6 +42,19 @@ function moto_merge_session_handler($class) {
     if ($class !== 'WC_Session_Handler' || !class_exists('WC_Session_Handler')) return $class;
     if (!class_exists('Moto_Merge_Session_Handler',false)) {
         class Moto_Merge_Session_Handler extends WC_Session_Handler {
+            public function get_session($customer_id, $default_value = false) {
+                $id = get_current_user_id();
+                if ($id && moto_phone_customer(wp_get_current_user())) {
+                    // Wait before reading the snapshot, never after it is loaded.
+                    if (!moto_merge_identity_lock($id, 2000)) {
+                        wp_die('Корзина сейчас обновляется. Повторите действие через несколько секунд.', 'Обновление корзины', ['response' => 409, 'back_link' => true]);
+                    }
+                    if (moto_account_is_merged($id)) {
+                        wp_die('Аккаунты объединены. Обновите страницу корзины.', 'Обновление корзины', ['response' => 409, 'back_link' => true]);
+                    }
+                }
+                return parent::get_session($customer_id, $default_value);
+            }
             public function save_data($old_session_key = '') {
                 try { moto_merge_cart_guard($this); }
                 catch (WC_Data_Exception $error) { return; } // A stale request must not overwrite the merged cart.
