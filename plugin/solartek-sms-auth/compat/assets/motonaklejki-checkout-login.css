@@ -27,3 +27,22 @@
 .woocommerce-checkout .moto-phone-auth__remember input[type=checkbox] { appearance: auto; flex: none; width: 20px; height: 20px; margin: 0; padding: 0; accent-color: var(--ssa-accent, #b83b00); }
 
 .woocommerce-checkout [data-moto-phone-auth][data-destination="checkout"] .moto-auth-fields > .moto-phone-auth__field { position: relative; gap: 0; }
+
+@media (max-width: 370px) {
+    .woocommerce-checkout [data-moto-phone-auth][data-destination="checkout"] [data-code-field] .moto-auth-code-control {
+        display: grid;
+        gap: 6px;
+        height: auto;
+    }
+
+    .woocommerce-checkout [data-moto-phone-auth][data-destination="checkout"] [data-code-field] .moto-auth-code-control input {
+        padding-right: 12px;
+    }
+
+    .woocommerce-checkout [data-moto-phone-auth][data-destination="checkout"] [data-code-field] .moto-auth-request-code {
+        position: static;
+        width: 100%;
+        height: auto;
+        min-height: 44px;
+    }
+}
