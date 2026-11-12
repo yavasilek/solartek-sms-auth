@@ -18,6 +18,7 @@
         const captchaInput = form.elements.captcha_answer;
         const refresh = form.querySelector('[data-captcha-refresh]');
         const compact = root.dataset.context !== 'tryon' && root.dataset.linking !== '1';
+        const autoVerify = root.hasAttribute('data-auto-verify');
         const captchaNote = document.createElement('p'), captchaNoteLead = document.createElement('strong');
         captchaNote.className = 'moto-phone-auth__verification-note'; captchaNote.id = phone.id + '-captcha-note';
         captchaNoteLead.textContent = 'SMS ещё не отправлено.';
@@ -48,6 +49,7 @@
         }
         let captcha = null, worker = null, work = '', captchaUntil = 0, repeatSend = false;
         let nonce = '', state = {}, busy = false, retryAt = 0, expiresAt = 0;
+        let lastAttemptedCode = '';
         const show = (message, error = false) => { status.textContent = message; status.dataset.error = error ? '1' : '0'; };
         const consentRow = consent.closest('.moto-phone-auth__consent');
         const consentError = document.createElement('span');
@@ -187,6 +189,7 @@
                     render(result.data.state || state); show(result.data.message || 'Не удалось отправить код.', true); return;
                 }
                 repeatSend = false;
+                lastAttemptedCode = '';
                 code.value = ''; render(result.data, true); consent.checked = true;
                 show(`Код отправлен на ${state.phone}. Введите ${code.maxLength} цифр из SMS.`);
             } catch (_) {
@@ -204,6 +207,7 @@
             if (!['sent', 'verified'].includes(state.status)) { await send(); return; }
             if (!requireConsent()) return;
             if (!new RegExp(`^[0-9]{${code.maxLength}}$`).test(code.value)) { show(`Введите ${code.maxLength} цифр из SMS.`, true); code.focus(); return; }
+            lastAttemptedCode = code.value;
             busy = true; submit.disabled = true; resend.disabled = true; change.disabled = true; form.setAttribute('aria-busy', 'true'); show('Проверяем код…');
             try {
                 const result = await request('verify', {code: code.value, destination: root.dataset.destination || 'account',
@@ -222,11 +226,17 @@
             finally { busy = false; submit.disabled = !nonce; change.disabled = false; form.removeAttribute('aria-busy'); tick(); }
         });
         resend.addEventListener('click', () => send(true));
-        change.addEventListener('click', () => { if (busy) return; clearCaptcha(); repeatSend = false; code.value = ''; render({}); show('Укажите номер для нового кода.'); phone.focus(); });
+        change.addEventListener('click', () => { if (busy) return; clearCaptcha(); repeatSend = false; lastAttemptedCode = ''; code.value = ''; render({}); show('Укажите номер для нового кода.'); phone.focus(); });
         refresh.addEventListener('click', () => { if (!busy && consent.checked) prepareCaptcha(repeatSend, true); });
         phone.addEventListener('input', () => { if (!busy && captcha) { clearCaptcha(); render({}); } });
         window.addEventListener('pagehide', clearCaptcha);
-        code.addEventListener('input', () => { code.value = code.value.replace(/[^0-9]/g, '').slice(0, code.maxLength); });
+        code.addEventListener('input', () => {
+            code.value = code.value.replace(/[^0-9]/g, '').slice(0, code.maxLength);
+            if (autoVerify && !busy && consent.checked && state.status === 'sent' && expiresAt > Date.now()
+                && code.maxLength === 6 && code.value.length === 6 && code.value !== lastAttemptedCode) {
+                form.requestSubmit();
+            }
+        });
         setInterval(tick, 1000);
         let loadingContext = false;
         const loadContext = async () => {

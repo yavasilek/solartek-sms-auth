@@ -437,12 +437,15 @@ function moto_phone_render($context = '', $product_id = 0): void {
     $linking = get_current_user_id() > 0;
     $tryon = $context === 'tryon' && !$linking;
     $checkout = function_exists('is_checkout') && is_checkout();
+    $auto_verify = !$linking && !$tryon && !$checkout
+        && function_exists('is_account_page') && is_account_page()
+        && function_exists('get_template') && get_template() === 'solartek';
     $id = wp_unique_id('moto-phone-');
     $verified = $linking ? get_user_meta(get_current_user_id(), '_moto_verified_phone', true) : '';
     $privacy = ssa_privacy_url();
     if (!$privacy) $privacy = home_url('/privacy-policy/');
     ?>
-    <section class="moto-phone-auth" data-moto-phone-auth<?php if ($tryon): ?> data-context="tryon" data-lazy="1" data-sip-product="<?php echo esc_attr((string) $product_id); ?>"<?php endif; ?> data-worker="<?php echo esc_url(ssa_asset_url('motonaklejki-phone-antibot-worker.js') . '?ver=' . SSA_VERSION); ?>" data-linking="<?php echo $linking ? '1' : '0'; ?>" data-destination="<?php echo $checkout ? 'checkout' : 'account'; ?>" data-endpoint="<?php echo esc_url(admin_url('admin-ajax.php')); ?>" aria-labelledby="<?php echo esc_attr($id); ?>title">
+    <section class="moto-phone-auth" data-moto-phone-auth<?php if ($auto_verify): ?> data-auto-verify<?php endif; ?><?php if ($tryon): ?> data-context="tryon" data-lazy="1" data-sip-product="<?php echo esc_attr((string) $product_id); ?>"<?php endif; ?> data-worker="<?php echo esc_url(ssa_asset_url('motonaklejki-phone-antibot-worker.js') . '?ver=' . SSA_VERSION); ?>" data-linking="<?php echo $linking ? '1' : '0'; ?>" data-destination="<?php echo $checkout ? 'checkout' : 'account'; ?>" data-endpoint="<?php echo esc_url(admin_url('admin-ajax.php')); ?>" aria-labelledby="<?php echo esc_attr($id); ?>title">
         <div class="moto-phone-auth__intro">
             <h2 id="<?php echo esc_attr($id); ?>title"><?php echo $tryon ? 'Войдите для примерки' : ($linking ? 'Телефон для входа' : 'Войти по телефону'); ?></h2>
             <p><?php echo $tryon ? 'Примерка сохранится в вашем аккаунте. Подтвердите номер — и перейдём к фото техники.' : ($linking ? 'Подтвердите номер кодом из SMS. После этого сможете входить без пароля.' : 'Получите код из SMS. Если вы здесь впервые, создадим аккаунт покупателя.'); ?></p>
