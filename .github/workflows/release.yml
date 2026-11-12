@@ -2,16 +2,30 @@ name: Test and release
 on:
   push:
     branches: [main]
-    paths: ['plugin/**', 'scripts/**', 'tests/**', '.github/workflows/**']
+    paths: ["plugin/**", "scripts/**", "tests/**", ".github/workflows/**"]
   pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths: ["plugin/**", "scripts/**", "tests/**", ".github/workflows/**"]
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish a release after all tests pass"
+        type: boolean
+        default: false
+        required: false
+
 permissions:
   contents: read
 concurrency:
-  group: sms-auth-${{ github.ref }}
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
+    outputs:
+      publish: ${{ steps.release_scope.outputs.publish }}
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -23,10 +37,31 @@ jobs:
           php-version: ${{ matrix.php }}
           extensions: gd, intl, openssl, pdo_sqlite, zip
           coverage: none
+      - name: Determine installable release changes
+        id: release_scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          REQUEST_PUBLISH: ${{ inputs.publish || false }}
+        run: |
+          python3 - <<'PY'
+          import os, subprocess
+          publish = os.environ['EVENT_NAME'] == 'workflow_dispatch' and os.environ['REQUEST_PUBLISH'] == 'true'
+          if os.environ['EVENT_NAME'] == 'push':
+              before = os.environ['BEFORE_SHA']
+              if not before or set(before) == {'0'}:
+                  publish = True
+              else:
+                  subprocess.run(['git', 'fetch', '--no-tags', '--depth=1', 'origin', before], check=True)
+                  changes = subprocess.check_output(['git', 'diff', '--name-only', before, os.environ['GITHUB_SHA'], '--', 'plugin', 'scripts/build.py'], text=True)
+                  publish = bool(changes.strip())
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write('publish=' + str(publish).lower() + '\n')
+          PY
       - run: python3 scripts/test.py
       - run: python3 scripts/build.py
   release:
-    if: github.event_name != 'pull_request'
+    if: needs.test.result == 'success' && needs.test.outputs.publish == 'true'
     needs: test
     runs-on: ubuntu-latest
     permissions:

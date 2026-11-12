@@ -1,1 +1,2 @@
 - IF installing, configuring or using the shared SMS authentication module or searching WordPress users by phone -> read [[README.md]].
+- IF changing GitHub Actions triggers, draft PR checks or full pre-publication verification -> read [[.github/CI.md]]
