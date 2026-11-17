@@ -67,6 +67,9 @@
 .moto-auth-compact.moto-password-auth form.woocommerce-form-login>.clear{display:none}
 .moto-auth-compact .moto-auth-fields .woocommerce-form-row{grid-template-rows:auto 48px;gap:6px}
 .moto-auth-compact .moto-auth-fields .woocommerce-form-row label{min-width:0}
+.moto-auth-compact .moto-auth-password-heading{display:flex;align-items:baseline;justify-content:space-between;gap:6px 12px;flex-wrap:wrap;min-width:0}
+.moto-auth-compact .moto-auth-password-heading>label{margin:0;font-size:16px;font-weight:600;line-height:1.4}
+.moto-auth-compact .moto-auth-password-heading>.moto-login-recovery{font-size:14px;font-weight:400;line-height:1.4}
 .moto-auth-compact .moto-auth-login-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:12px;min-width:0}
 .moto-auth-compact .moto-auth-options{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:0;min-width:0}
 .moto-auth-compact .moto-auth-options .woocommerce-form-login__rememberme,.moto-auth-compact .moto-auth-options .moto-login-recovery{display:flex;align-items:center;min-height:32px;margin:0;font-size:14px;line-height:1.5;white-space:normal}

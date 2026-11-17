@@ -22,7 +22,16 @@
             label.prepend(document.createTextNode('Email или логин '));
         }
         const options = document.createElement('div'); options.className = 'moto-auth-options';
-        link.classList.add('moto-login-recovery'); options.append(remember, link);
+        link.classList.add('moto-login-recovery');
+        options.append(remember);
+        const passwordLabel = form.querySelector('label[for="password"]');
+        if (passwordLabel && !form.closest('.woocommerce-checkout')) {
+            const heading = document.createElement('span'); heading.className = 'moto-auth-password-heading';
+            passwordLabel.before(heading);
+            heading.append(passwordLabel, link);
+        } else {
+            options.append(link);
+        }
         const actions = document.createElement('div'); actions.className = 'moto-auth-login-actions';
         actions.append(options, submit); form.append(actions);
         // Checkout uses in-field prompts while retaining the native accessible labels and controls.
