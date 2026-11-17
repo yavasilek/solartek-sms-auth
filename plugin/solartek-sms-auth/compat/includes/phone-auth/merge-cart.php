@@ -33,16 +33,93 @@ function moto_merge_cart_guard($session = null): void {
     }
     $session = $session ?: (WC()->session ?? null);
     if (!$session || !is_callable([$session,'get'])) return;
+    if ($session instanceof Moto_Merge_Session_Handler && $session->is_storefront_snapshot()) {
+        throw new WC_Data_Exception('moto_cart_snapshot', 'Обновите корзину и повторите действие.', 409);
+    }
     if (!moto_merge_identity_lock($id)) throw new WC_Data_Exception('moto_cart_busy','Корзина сейчас обновляется. Повторите действие через несколько секунд.',409);
     if (moto_account_is_merged($id)) throw new WC_Data_Exception('moto_account_merged','Аккаунты объединены. Обновите страницу корзины.',409);
     if (moto_merge_cart_epoch($id) !== (string)$session->get('_moto_merge_epoch','')) throw new WC_Data_Exception('moto_cart_changed','Корзина изменилась после объединения аккаунтов. Обновите страницу.',409);
+}
+
+/** Only public Moto catalog/product URLs with ordinary display parameters. */
+function moto_merge_is_storefront_read(): bool {
+    if (!in_array($_SERVER['REQUEST_METHOD'] ?? '', ['GET', 'HEAD'], true)) return false;
+    $path = rawurldecode(explode('?', $_SERVER['REQUEST_URI'] ?? '', 2)[0]);
+    if (!preg_match('~\A/(?:catalog(?:/page/[1-9][0-9]*)?|product/[\p{L}\p{N}_-]+)/?\z~u', $path)) return false;
+
+    foreach (array_keys($_GET) as $key) {
+        if (!preg_match('/\A(?:s|orderby|order|min_price|max_price|rating_filter|page|paged|product-page|st_(?:vehicle|vehicle_label|brand|model|source|choose|reset)|(?:filter|query_type|attribute|utm)_[a-z0-9_-]+|yclid|gclid|fbclid|srsltid|_openstat)\z/i', (string) $key)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function moto_merge_session_handler($class) {
     if ($class !== 'WC_Session_Handler' || !class_exists('WC_Session_Handler')) return $class;
     if (!class_exists('Moto_Merge_Session_Handler',false)) {
         class Moto_Merge_Session_Handler extends WC_Session_Handler {
+            private int $snapshot_customer_id = 0;
+            private int $locked_customer_id = 0;
+
+            public function init_session_cookie() {
+                $id = get_current_user_id();
+                if (!$id || !moto_merge_is_storefront_read() || !moto_phone_customer(wp_get_current_user())) {
+                    parent::init_session_cookie();
+                    return;
+                }
+
+                $cookie = $this->get_session_cookie();
+                $now = time();
+                // Let Woo renew or migrate a cookie if it can do so immediately. Otherwise leave it for the next request.
+                if ($cookie && ((string) $cookie[0] !== (string) $id || (int) $cookie[2] <= $now || (int) $cookie[1] <= $now)
+                    && moto_merge_identity_lock($id)) {
+                    parent::init_session_cookie();
+                    return;
+                }
+
+                $this->snapshot_customer_id = $id;
+                $this->_customer_id = (string) $id;
+                $this->_has_cookie = $cookie && (string) $cookie[0] === (string) $id && (int) $cookie[1] > $now;
+                // Loading and rendering the native cart can also update persistent cart meta and cookies.
+                foreach (['add', 'update', 'delete'] as $operation) {
+                    add_filter($operation . '_user_metadata', [$this, 'protect_cart_meta'], PHP_INT_MAX, 3);
+                }
+                add_filter('woocommerce_set_cookie_enabled', [$this, 'protect_cart_cookies'], PHP_INT_MAX, 2);
+
+                $this->_data = $this->get_session_data();
+                if ($this->_has_cookie) {
+                    $this->_data = (array) apply_filters('woocommerce_restored_session_data', $this->_data);
+                }
+            }
+
+            public function is_storefront_snapshot(): bool {
+                return $this->snapshot_customer_id !== 0;
+            }
+
+            public function protect_cart_meta($result, $id, $key) {
+                if ((int) $id === $this->snapshot_customer_id &&
+                    in_array($key, ['_woocommerce_load_saved_cart_after_login', '_woocommerce_persistent_cart_' . get_current_blog_id()], true)) {
+                    return false;
+                }
+                return $result;
+            }
+
+            public function protect_cart_cookies($enabled, $name) {
+                return $enabled && !in_array($name, [$this->_cookie, 'woocommerce_items_in_cart', 'woocommerce_cart_hash'], true);
+            }
+
             public function get_session($customer_id, $default_value = false) {
+                if ($this->is_storefront_snapshot() && (string) $customer_id === (string) $this->snapshot_customer_id) {
+                    // A concurrent writer must not see an old snapshot populated into the shared session cache.
+                    global $wpdb;
+                    $value = $wpdb->get_var($wpdb->prepare(
+                        "SELECT session_value FROM {$this->_table} WHERE session_key = %s AND session_expiry > %d",
+                        (string) $customer_id,
+                        time()
+                    ));
+                    return $value === null ? $default_value : maybe_unserialize($value);
+                }
                 $id = get_current_user_id();
                 if ($id && moto_phone_customer(wp_get_current_user())) {
                     // Wait before reading the snapshot, never after it is loaded.
@@ -52,17 +129,38 @@ function moto_merge_session_handler($class) {
                     if (moto_account_is_merged($id)) {
                         wp_die('Аккаунты объединены. Обновите страницу корзины.', 'Обновление корзины', ['response' => 409, 'back_link' => true]);
                     }
+                    // Authentication can cache user meta before we acquire the lock, including a cart just checked out.
+                    if ($this->locked_customer_id !== $id) {
+                        wp_cache_delete($id, 'user_meta');
+                        $this->locked_customer_id = $id;
+                    }
                 }
                 return parent::get_session($customer_id, $default_value);
             }
+
             public function save_data($old_session_key = '') {
+                if ($this->is_storefront_snapshot()) return;
                 try { moto_merge_cart_guard($this); }
                 catch (WC_Data_Exception $error) { return; } // A stale request must not overwrite the merged cart.
                 parent::save_data($old_session_key);
             }
+
+            public function delete_session($customer_id) {
+                if (!$this->is_storefront_snapshot()) parent::delete_session($customer_id);
+            }
+
+            public function update_session_timestamp($customer_id, $timestamp) {
+                if (!$this->is_storefront_snapshot()) parent::update_session_timestamp($customer_id, $timestamp);
+            }
         }
     }
     return 'Moto_Merge_Session_Handler';
+}
+
+function moto_merge_cart_load_hook(): void {
+    $session = WC()->session ?? null;
+    if ($session instanceof Moto_Merge_Session_Handler && $session->is_storefront_snapshot()) return;
+    moto_merge_cart_hook();
 }
 
 function moto_merge_cart_hook(): void {

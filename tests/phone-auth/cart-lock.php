@@ -7,6 +7,11 @@ class WC_Session_Handler {
 }
 require __DIR__ . '/merge-bootstrap.php';
 
+function wp_cache_delete($id, $group) {
+    $GLOBALS['cartLockCacheDeletes'][] = [$id, $group];
+    return true;
+}
+
 if (($argv[1] ?? '') === '--hold') {
     $id = (int) $argv[2];
     $token = moto_phone_lock('identity-user:' . $id);
@@ -42,6 +47,33 @@ $GLOBALS['fixtureWC'] = (object) ['session' => $session];
 $class = moto_merge_session_handler('WC_Session_Handler');
 $native = new $class();
 
+$routes = [
+    ['GET', '/catalog/', [], true],
+    ['GET', '/catalog/page/2/?filter_color=red', ['filter_color' => 'red'], true],
+    ['HEAD', '/catalog/?st_vehicle=snow', ['st_vehicle' => 'snow'], true],
+    ['GET', '/product/%D0%BD%D0%B0%D0%B1%D0%BE%D1%80/', [], true],
+    ['GET', '/product/atv/?utm_source=search', ['utm_source' => 'search'], true],
+    ['GET', '/product/atv/?add-to-cart=12', ['add-to-cart' => '12'], false],
+    ['GET', '/catalog/?wc-ajax=checkout', ['wc-ajax' => 'checkout'], false],
+    ['GET', '/catalog/?session=token', ['session' => 'token'], false],
+    ['GET', '/catalog/?rest_route=/wc/store/v1/cart', ['rest_route' => '/wc/store/v1/cart'], false],
+    ['GET', '/catalog/?order_again=12', ['order_again' => '12'], false],
+    ['GET', '/catalog/?action=merge', ['action' => 'merge'], false],
+    ['GET', '/product/atv/order-pay/12/', [], false],
+    ['GET', '/cart/', [], false],
+    ['GET', '/checkout/', [], false],
+    ['GET', '/my-account/', [], false],
+    ['POST', '/catalog/', [], false],
+];
+foreach ($routes as [$method, $uri, $query, $read_only]) {
+    $_SERVER['REQUEST_METHOD'] = $method;
+    $_SERVER['REQUEST_URI'] = $uri;
+    $_GET = $query;
+    lock_check("Storefront classification for $method $uri", moto_merge_is_storefront_read() === $read_only);
+}
+unset($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);
+$_GET = [];
+
 $worker = proc_open([PHP_BINARY, __FILE__, '--hold', (string) $source, '--save'], [
     0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']
 ], $pipes);
@@ -59,6 +91,7 @@ fclose($pipes[2]);
 lock_check('Parallel lock worker exits cleanly', proc_close($worker) === 0 && $workerError === '');
 lock_check('Ordinary parallel request resumes when the lock clears', $error === null && $elapsed >= 0.05 && $elapsed < 3);
 lock_check('Resumed request reads the preceding committed snapshot', ($snapshot['_moto_merge_epoch'] ?? '') === 'saved-before-unlock');
+lock_check('Protected read refreshes previously cached persistent cart metadata', $GLOBALS['cartLockCacheDeletes'] === [[$source, 'user_meta']]);
 $session->epoch = $snapshot['_moto_merge_epoch'];
 moto_merge_cart_hook();
 lock_check('Resumed request owns the lock through its saves', moto_phone_lock('identity-user:' . $source) === '');
